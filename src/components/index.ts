@@ -1,3 +1,9 @@
 export { Header } from "./Header/Header";
 export { Footer } from "./Footer/Footer";
-export { LanguageSelector } from "./LanguageSelector/LanguageSelector";
+export { LanguageSelector } from "./Footer/LanguageSelector";
+export { LoginPage } from "./Login/LoginPage";
+export { ProfilePage } from "./Profile/ProfilePage";
+export { ChangeEmailPage } from "./Profile/ChangeEmailPage";
+export { ChangePasswordPage } from "./Profile/ChangePasswordPage";
+export { PasswordResetForm } from "./Profile/PasswordResetForm";
+export { NotificationModal } from "./Modals/NotificationModal";
