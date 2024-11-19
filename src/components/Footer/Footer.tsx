@@ -36,10 +36,10 @@ export const Footer = ({ companyName = 'USOF' }: FooterProps) => {
 
     return (
         <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 transition-colors duration-200">
-            <div className="max-w-7xl mx-auto px-4 py-12">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                    <div className="space-y-4">
-                        <h2 className="text-xl font-bold text-gray-800 dark:text-white">
+            <div className="max-w-7xl mx-auto px-4 py-8 md:py-12">
+                <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+                    <div className="col-span-2 md:col-span-1 space-y-4">
+                        <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">
                             {companyName}
                         </h2>
                         <p className="text-sm text-gray-600 dark:text-gray-300">
@@ -55,13 +55,12 @@ export const Footer = ({ companyName = 'USOF' }: FooterProps) => {
                                     className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors duration-200"
                                     aria-label={social.label}
                                 >
-                                    <social.icon className="h-6 w-6" />
+                                    <social.icon className="h-5 w-5 md:h-6 md:w-6" />
                                 </a>
                             ))}
                         </div>
                     </div>
 
-                    {/* Footer Links sections remain the same, just using translated labels */}
                     {Object.entries(footerLinks).map(([key, links]) => (
                         <div key={key} className="space-y-4">
                             <h3 className="text-sm font-semibold text-gray-400 dark:text-gray-300 uppercase tracking-wider">
@@ -83,12 +82,12 @@ export const Footer = ({ companyName = 'USOF' }: FooterProps) => {
                     ))}
                 </div>
 
-                <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
-                    <div className="flex flex-col md:flex-row justify-between items-center">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="mt-8 md:mt-12 pt-6 md:pt-8 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex flex-col-reverse md:flex-row justify-between items-center space-y-4 md:space-y-0">
+                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
                             © {currentYear} {companyName}. {t('allRightsReserved')}.
                         </p>
-                        <div className="mt-4 md:mt-0">
+                        <div className="w-full md:w-auto flex justify-center">
                             <LanguageSelector />
                         </div>
                     </div>

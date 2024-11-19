@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useLanguage } from '../../LanguageContext';
+import { useLanguage } from '../../contexts';
 
 export const LanguageSelector = () => {
     const { t } = useTranslation();
