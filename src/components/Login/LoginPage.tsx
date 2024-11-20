@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthService } from '../../services';
-import { UserRole } from '../../models';
 
 interface LoginPageProps {
-    onLogin: (userData: { name: string; role: string; avatarUrl?: string }) => void;
+    onLogin: () => void;
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
@@ -33,11 +32,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             }
 
             if (!isRegister) {
-                onLogin({
-                    name: user.fullName,
-                    role: user.role === UserRole.ADMIN ? 'Admin' : 'User',
-                    avatarUrl: user.profilePicture
-                });
+                onLogin();
             }
 
 

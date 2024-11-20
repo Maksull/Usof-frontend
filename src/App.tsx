@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LanguageProvider, ThemeProvider } from "./contexts";
 import { User } from './models/User';
-import { ChangeEmailPage, ChangePasswordPage, Footer, Header, LoginPage, ProfilePage } from './components';
+import { ChangeEmailPage, ChangePasswordPage, CreatePostPage, Footer, Header, LoginPage, MainPage, PostPage, ProfilePage } from './components';
 import { AuthService, UsersService } from './services';
 import { mapDtoToUser } from './utils/mapping';
 
@@ -26,7 +26,7 @@ function App() {
         initializeUser();
     }, []);
 
-    const handleLogin = async (userData: { name: string; role: string; avatarUrl?: string }) => {
+    const handleLogin = async () => {
         try {
             const userProfile = mapDtoToUser(await UsersService.getUserProfile());
             setUser(userProfile);
@@ -61,7 +61,7 @@ function App() {
                                     path="/login"
                                     element={user ? <Navigate to="/" /> : <LoginPage onLogin={handleLogin} />}
                                 />
-                                <Route path="/" element={<div>Home Page</div>} />
+                                <Route path="/" element={<MainPage />} />
                                 <Route
                                     path="/profile"
                                     element={user ? (
@@ -73,6 +73,13 @@ function App() {
                                         <Navigate to="/login" />
                                     )}
                                 />
+                                <Route
+                                    path="/create-post"
+                                    element={
+                                        user ? <CreatePostPage /> : <Navigate to="/login" />
+                                    }
+                                />
+                                <Route path="/post/:id" element={<PostPage />} />
                                 <Route path="/reset-password/:token" element={<ChangePasswordPage />} />
                                 <Route path="/change-email/:token" element={<ChangeEmailPage />} />
                                 {!user && <Route path="*" element={<Navigate to="/login" />} />}
