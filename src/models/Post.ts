@@ -1,4 +1,4 @@
-import { Category, Like, User } from ".";
+import { Category, Like, User, Comment } from ".";
 
 export enum PostStatus {
     ACTIVE = 'active',
