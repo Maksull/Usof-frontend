@@ -9,6 +9,8 @@ export class Comment {
     postId: number;
     post: Post;
     likes: Like[];
+    parentId?: number;
+    replies?: Comment[];
 
     constructor(
         id: number,
@@ -18,7 +20,9 @@ export class Comment {
         content: string,
         postId: number,
         post: Post,
-        likes: Like[] = []
+        likes: Like[] = [],
+        parentId?: number,
+        replies: Comment[] = []
     ) {
         this.id = id;
         this.authorId = authorId;
@@ -28,5 +32,7 @@ export class Comment {
         this.postId = postId;
         this.post = post;
         this.likes = likes;
+        this.parentId = parentId;
+        this.replies = replies;
     }
 }
