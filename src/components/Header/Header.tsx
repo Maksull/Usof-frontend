@@ -20,7 +20,14 @@ export const Header = ({ currentUser, onLogout, onLogin }: HeaderProps) => {
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('Searching for:', searchQuery);
+
+        if (searchQuery.trim()) {
+            // Navigate to main page with search query
+            navigate(`/?searchQuery=${encodeURIComponent(searchQuery.trim())}`);
+        } else {
+            // If search is empty, remove search query from URL
+            navigate('/');
+        }
     };
 
     const handleProfileClick = () => {
@@ -34,6 +41,8 @@ export const Header = ({ currentUser, onLogout, onLogin }: HeaderProps) => {
     const handleLogoClick = () => {
         navigate('/');
     };
+
+
 
     return (
         <header className="bg-white dark:bg-gray-800 shadow-md transition-colors duration-200">
