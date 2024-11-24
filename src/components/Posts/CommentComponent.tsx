@@ -2,15 +2,16 @@ import axios from "axios";
 import { useState } from "react";
 import config from "../../config";
 import { PostsService } from "../../services";
-import { Post, Comment } from "../../models";
-import { LikesService } from "../../services";
+import { Comment } from "../../models";
+import { ExtendedPost, transformToExtendedPost } from "./PostPage";
+import { ThumbsDown, ThumbsUp } from "lucide-react";
 
-interface CommentComponentProps {
+type CommentComponentProps = {
     comment: Comment;
-    setPost: (post: Post | null) => void;
-    isLiking?: boolean;
-    onCommentLike?: (commentId: number, isLike: boolean) => Promise<void>;
-}
+    setPost: (post: ExtendedPost | null) => void;
+    isLiking: boolean;
+    onCommentLike: (commentId: number, isLike: boolean) => void;
+};
 
 export const CommentComponent: React.FC<CommentComponentProps> = ({
     comment,
@@ -34,7 +35,7 @@ export const CommentComponent: React.FC<CommentComponentProps> = ({
             setReplyContent('');
             setIsReplying(false);
             const updatedPost = await PostsService.getPostById(comment.postId);
-            setPost(updatedPost);
+            setPost(transformToExtendedPost(updatedPost));
         } catch (err) {
             console.error('Error posting reply:', err);
         } finally {
@@ -77,10 +78,10 @@ export const CommentComponent: React.FC<CommentComponentProps> = ({
                                     ? 'text-blue-600 dark:text-blue-400'
                                     : 'text-gray-500 dark:text-gray-400'}`}
                         >
-                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                            </svg>
+                            <ThumbsUp
+                                className="w-4 h-4 mr-1"
+                                strokeWidth={2}
+                            />
                             {comment.likes?.filter(like => like.type === 'like').length || 0}
                         </button>
 
@@ -92,10 +93,10 @@ export const CommentComponent: React.FC<CommentComponentProps> = ({
                                     ? 'text-red-600 dark:text-red-400'
                                     : 'text-gray-500 dark:text-gray-400'}`}
                         >
-                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                    d="M19.682 17.682l-6.364 6.364-6.364-6.364m0 0a4.5 4.5 0 010-6.364L12 4.318l1.318 1.318a4.5 4.5 0 016.364 0z" />
-                            </svg>
+                            <ThumbsDown
+                                className="w-4 h-4 mr-1"
+                                strokeWidth={2}
+                            />
                             {comment.likes?.filter(like => like.type === 'dislike').length || 0}
                         </button>
                     </>
@@ -168,10 +169,10 @@ export const CommentComponent: React.FC<CommentComponentProps> = ({
                                                     ? 'text-blue-600 dark:text-blue-400'
                                                     : 'text-gray-500 dark:text-gray-400'}`}
                                         >
-                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                            </svg>
+                                            <ThumbsUp
+                                                className="w-4 h-4 mr-1"
+                                                strokeWidth={2}
+                                            />
                                             {reply.likes?.filter(like => like.type === 'like').length || 0}
                                         </button>
 
@@ -183,10 +184,10 @@ export const CommentComponent: React.FC<CommentComponentProps> = ({
                                                     ? 'text-red-600 dark:text-red-400'
                                                     : 'text-gray-500 dark:text-gray-400'}`}
                                         >
-                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                                    d="M19.682 17.682l-6.364 6.364-6.364-6.364m0 0a4.5 4.5 0 010-6.364L12 4.318l1.318 1.318a4.5 4.5 0 016.364 0z" />
-                                            </svg>
+                                            <ThumbsDown
+                                                className="w-4 h-4 mr-1"
+                                                strokeWidth={2}
+                                            />
                                             {reply.likes?.filter(like => like.type === 'dislike').length || 0}
                                         </button>
                                     </>

@@ -4,17 +4,17 @@ import config from '../config';
 
 interface PostFilters {
     categoryIds?: number[];
-    dateInterval?: {
-        startDate: string;
-        endDate: string;
-    };
+    dateInterval?: { startDate: string; endDate: string };
     status?: PostStatus;
+    searchQuery?: string;
 }
 
 interface PaginationParams {
     page: number;
     pageSize: number;
 }
+
+type SortBy = 'publishDate' | 'likesCount' | 'commentsCount';
 
 interface GetPostsResponse {
     data: Post[];
@@ -27,9 +27,7 @@ export class PostsService {
     static async createPost(formData: FormData): Promise<Post> {
         try {
             const response = await axios.post(`${config.backendUrl}/posts/createPost`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
             return response.data;
         } catch (error) {
@@ -37,15 +35,10 @@ export class PostsService {
         }
     }
 
-    static async updatePost(
-        postId: number,
-        formData: FormData
-    ): Promise<Post> {
+    static async updatePost(postId: number, formData: FormData): Promise<Post> {
         try {
             const response = await axios.put(`${config.backendUrl}/posts/${postId}`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
             return response.data;
         } catch (error) {
@@ -53,9 +46,6 @@ export class PostsService {
         }
     }
 
-    /**
-     * Delete a post
-     */
     static async deletePost(postId: number): Promise<void> {
         try {
             await axios.delete(`${config.backendUrl}/posts/${postId}`);
@@ -64,32 +54,42 @@ export class PostsService {
         }
     }
 
-    /**
-     * Get posts with filters, sorting, and pagination
-     */
     static async getPosts(
         filters: PostFilters = {},
-        sortBy: 'date' | 'likes' = 'date',
+        sortBy: SortBy = 'publishDate',
         pagination: PaginationParams = { page: 1, pageSize: 10 }
     ): Promise<GetPostsResponse> {
         try {
+            console.log("Filters")
+            console.log(filters)
             const params = new URLSearchParams();
 
-            // Add pagination parameters
+            if (filters.searchQuery) {
+                params.append('searchQuery', filters.searchQuery?.toString());
+            }
+
+            // Pagination
             params.append('page', pagination.page.toString());
             params.append('pageSize', pagination.pageSize.toString());
 
-            // Add sorting
-            params.append('sortBy', sortBy);
+            // Sorting
+            // Convert frontend sort values to backend expected values
+            const sortMapping: Record<SortBy, string> = {
+                publishDate: 'date',
+                likesCount: 'likes',
+                commentsCount: 'comments'
+            };
+            params.append('sortBy', sortMapping[sortBy]);
 
-            // Add filters if they exist
+            // Filters
             if (filters.categoryIds?.length) {
                 filters.categoryIds.forEach(id => params.append('categoryIds', id.toString()));
             }
 
             if (filters.dateInterval) {
-                params.append('startDate', filters.dateInterval.startDate);
-                params.append('endDate', filters.dateInterval.endDate);
+                const { startDate, endDate } = filters.dateInterval;
+                if (startDate) params.append('startDate', new Date(startDate).toISOString().split('T')[0]);
+                if (endDate) params.append('endDate', new Date(endDate).toISOString().split('T')[0]);
             }
 
             if (filters.status) {
@@ -103,9 +103,6 @@ export class PostsService {
         }
     }
 
-    /**
-     * Get a single post by ID
-     */
     static async getPostById(postId: number): Promise<Post> {
         try {
             const response = await axios.get(`${config.backendUrl}/posts/${postId}`);
@@ -115,9 +112,6 @@ export class PostsService {
         }
     }
 
-    /**
-     * Handle API errors
-     */
     private static handleError(error: any): Error {
         if (axios.isAxiosError(error)) {
             const message = error.response?.data?.error || error.message;
