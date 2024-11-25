@@ -344,7 +344,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                 <MessageSquare className="w-5 h-5 mr-2" />
                 Comments ({post.comments?.length || 0})
             </h2>
-
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="relative">
                     <textarea
@@ -352,42 +351,31 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                         onChange={(e) => setContent(e.target.value)}
                         placeholder="Share your thoughts..."
                         className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 dark:border-gray-600 
-                                 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
-                                 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                   bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
+                                   focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                         rows={3}
                     />
                     <button
                         type="submit"
                         disabled={isSubmitting || !content.trim()}
                         className="absolute right-2 bottom-2 p-2 text-blue-600 dark:text-blue-400 
-                                 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors
-                                 disabled:opacity-50 disabled:cursor-not-allowed"
+                                   hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors
+                                   disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isSubmitting ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
-                            <Send className="w-5 h-5" />
-                        )}
+                        {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                     </button>
                 </div>
-
                 {error && (
-                    <div className="text-sm text-red-600 dark:text-red-400">
-                        {error}
-                    </div>
+                    <div className="text-sm text-red-600 dark:text-red-400">{error}</div>
                 )}
             </form>
-
             <div className="space-y-6">
-                {post.comments?.map((comment) => (
-                    <CommentComponent
-                        key={comment.id}
-                        comment={comment}
-                        setPost={setPost}
-                        isLiking={isLiking}
-                        onCommentLike={onCommentLike}
-                    />
-                ))}
+                <CommentComponent
+                    comments={post.comments || []}
+                    setPost={setPost}
+                    isLiking={isLiking}
+                    onCommentLike={onCommentLike}
+                />
             </div>
         </div>
     );
@@ -606,9 +594,9 @@ export const PostPage = () => {
                                         onCommentPost={handleCommentPost}
                                         isSubmitting={isSubmittingComment}
                                         error={commentError}
-                                        setPost={setPost}          // Add this
-                                        isLiking={isLiking}       // Add this
-                                        onCommentLike={handleCommentLike}  // Add this
+                                        setPost={setPost}
+                                        isLiking={isLiking}
+                                        onCommentLike={handleCommentLike}
                                     />
                                 </div>
                             </>
