@@ -5,7 +5,6 @@ export { LoginPage } from "./Login/LoginPage";
 export { ProfilePage } from "./Profile/ProfilePage";
 export { ChangeEmailPage } from "./Profile/ChangeEmailPage";
 export { ChangePasswordPage } from "./Profile/ChangePasswordPage";
-export { PasswordResetForm } from "./Profile/PasswordResetForm";
 export { NotificationModal } from "./Modals/NotificationModal";
 export { MainPage } from "./MainPage/MainPage";
 export { CreatePostPage } from "./Posts/CreatePostPage";
