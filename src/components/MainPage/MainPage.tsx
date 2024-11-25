@@ -4,6 +4,7 @@ import { Post as PostModel, PostStatus } from '../../models/Post';
 import { PostsService } from '../../services';
 import axios from 'axios';
 import config from '../../config';
+import { Calendar, ChevronLeft, ChevronRight, ImageIcon, MessageCircle, Plus, ThumbsUp, X } from 'lucide-react';
 
 interface Category {
     id: number;
@@ -32,7 +33,7 @@ interface FilterState {
         endDate: string;
     };
     categoryIds?: number[];
-    searchQuery?: string; 
+    searchQuery?: string;
 }
 
 const POSTS_PER_PAGE = 10;
@@ -150,62 +151,71 @@ export const MainPage = () => {
     };
 
     const FilterBar = () => (
-        <div className="mb-6 space-y-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
-            <div className="flex flex-wrap gap-4">
+        <div className="mb-8 space-y-6 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition-all duration-300">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
                 <select
                     value={sortBy}
                     onChange={(e) => handleSortChange(e.target.value as typeof sortBy)}
-                    className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md">
+                    className="px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 w-full sm:w-auto"
+                >
                     {SORT_OPTIONS.map(option => (
                         <option key={option.value} value={option.value}>{option.label}</option>
                     ))}
                 </select>
-                <div className="flex items-center gap-2">
-                    <input
-                        type="date"
-                        value={filters.dateInterval?.startDate || ''}
-                        onChange={(e) => handleFilterChange({ startDate: e.target.value || undefined })}
-                        className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md"
-                        max={filters.dateInterval?.endDate}
-                    />
+
+                <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+                    <div className="relative w-full sm:w-auto">
+                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                        <input
+                            type="date"
+                            value={filters.dateInterval?.startDate || ''}
+                            onChange={(e) => handleFilterChange({ startDate: e.target.value || undefined })}
+                            className="pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 w-full"
+                            max={filters.dateInterval?.endDate}
+                        />
+                    </div>
                     <span className="text-gray-500">to</span>
                     <input
                         type="date"
                         value={filters.dateInterval?.endDate || ''}
                         onChange={(e) => handleFilterChange({ endDate: e.target.value || undefined })}
-                        className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md"
+                        className="px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 w-full sm:w-auto"
                         min={filters.dateInterval?.startDate}
                     />
                 </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-                {categories.map(category => (
-                    <button
-                        key={category.id}
-                        onClick={() => {
-                            const currentCategories = filters.categoryIds || [];
-                            const newCategories = currentCategories.includes(category.id)
-                                ? currentCategories.filter(id => id !== category.id)
-                                : [...currentCategories, category.id];
-                            handleFilterChange({ categoryIds: newCategories });
-                        }}
-                        className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${filters.categoryIds?.includes(category.id)
-                            ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                            }`}
-                    >
-                        {category.title}
-                    </button>
-                ))}
+            <div className="space-y-4">
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Categories</h3>
+                <div className="flex flex-wrap gap-2">
+                    {categories.map(category => (
+                        <button
+                            key={category.id}
+                            onClick={() => {
+                                const currentCategories = filters.categoryIds || [];
+                                const newCategories = currentCategories.includes(category.id)
+                                    ? currentCategories.filter(id => id !== category.id)
+                                    : [...currentCategories, category.id];
+                                handleFilterChange({ categoryIds: newCategories });
+                            }}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${filters.categoryIds?.includes(category.id)
+                                ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 ring-2 ring-blue-500'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                }`}
+                        >
+                            {category.title}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {Boolean(filters.dateInterval || filters.categoryIds?.length) && (
                 <div className="flex justify-end">
                     <button
                         onClick={() => setFilters({})}
-                        className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200"
                     >
+                        <X className="w-4 h-4 mr-2" />
                         Clear Filters
                     </button>
                 </div>
@@ -213,124 +223,159 @@ export const MainPage = () => {
         </div>
     );
 
+
     const Pagination = () => {
         const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+        const showPages = pages.slice(
+            Math.max(0, currentPage - 2),
+            Math.min(totalPages, currentPage + 1)
+        );
+
         return (
-            <div className="mt-8 flex justify-center items-center space-x-2">
+            <div className="mt-12 flex justify-center items-center space-x-2">
                 <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    className="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200"
                 >
-                    Previous
+                    <ChevronLeft className="w-5 h-5" />
                 </button>
-                {pages.map(page => (
+
+                {showPages[0] > 1 && (
+                    <>
+                        <button
+                            onClick={() => handlePageChange(1)}
+                            className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200"
+                        >
+                            1
+                        </button>
+                        {showPages[0] > 2 && (
+                            <span className="text-gray-500 dark:text-gray-400">...</span>
+                        )}
+                    </>
+                )}
+
+                {showPages.map(page => (
                     <button
                         key={page}
                         onClick={() => handlePageChange(page)}
-                        className={`px-4 py-2 rounded-md transition-colors ${currentPage === page
-                            ? 'bg-blue-600 text-white'
+                        className={`px-4 py-2 rounded-lg transition-all duration-200 ${currentPage === page
+                            ? 'bg-blue-600 text-white shadow-lg'
                             : 'bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                             }`}
                     >
                         {page}
                     </button>
                 ))}
+
+                {showPages[showPages.length - 1] < totalPages - 1 && (
+                    <span className="text-gray-500 dark:text-gray-400">...</span>
+                )}
+
+                {showPages[showPages.length - 1] < totalPages && (
+                    <button
+                        onClick={() => handlePageChange(totalPages)}
+                        className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200"
+                    >
+                        {totalPages}
+                    </button>
+                )}
+
                 <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    className="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200"
                 >
-                    Next
+                    <ChevronRight className="w-5 h-5" />
                 </button>
             </div>
         );
     };
 
+
     const PostCard = ({ post }: { post: DisplayPost }) => (
-        <article className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden group">
-            <div className="aspect-video w-full overflow-hidden">
+        <article className="group bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden">
+            <div className="aspect-video w-full overflow-hidden relative">
                 {post.image ? (
                     <img
                         src={post.image}
                         alt={post.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
                     />
                 ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900 dark:to-blue-800 flex items-center justify-center">
-                        <div className="text-center">
-                            <svg className="w-16 h-16 mx-auto text-blue-300 dark:text-blue-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span className="text-sm text-blue-400 dark:text-blue-300">No image available</span>
-                        </div>
+                    <div className="w-full h-full bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 flex items-center justify-center">
+                        <ImageIcon className="w-12 h-12 text-blue-300 dark:text-blue-500" />
                     </div>
                 )}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                    <div className="flex items-center space-x-2">
+                        <span className="px-2 py-1 text-xs font-medium text-white bg-black/30 backdrop-blur-sm rounded-full">
+                            {new Date(post.publishDate).toLocaleDateString()}
+                        </span>
+                        <span className="px-2 py-1 text-xs font-medium text-white bg-black/30 backdrop-blur-sm rounded-full">
+                            By {post.author.name}
+                        </span>
+                    </div>
+                </div>
             </div>
 
-            <div className="p-6">
-                <div className="flex flex-col space-y-2 mb-4">
-                    <button onClick={() => navigate(`/post/${post.id}`)} className="text-left">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                            {post.title}
-                        </h2>
-                    </button>
+            <div className="p-6 space-y-4">
+                <button
+                    onClick={() => navigate(`/post/${post.id}`)}
+                    className="block group/title w-full text-left"
+                >
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 group-hover/title:text-blue-600 dark:group-hover/title:text-blue-400 transition-colors line-clamp-2">
+                        {post.title}
+                    </h2>
+                </button>
 
-                    <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-                        <span>By {post.author.name}</span>
-                        <time className="text-gray-500 dark:text-gray-500">
-                            {new Date(post.publishDate).toLocaleDateString()}
-                        </time>
-                    </div>
-
-                    {post.categories.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                            {post.categories.map(category => (
-                                <span
-                                    key={category.id}
-                                    className="px-2 py-1 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
-                                >
-                                    {category.title}
-                                </span>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                <p className="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3">
+                <p className="text-gray-600 dark:text-gray-300 line-clamp-3">
                     {post.content}
                 </p>
 
-                <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                    <div className="flex items-center">
-                        <svg className="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                        </svg>
-                        {post.likesCount} likes
+                <div className="flex flex-wrap gap-2">
+                    {post.categories.map(category => (
+                        <span
+                            key={category.id}
+                            className="px-3 py-1 text-xs font-medium rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                        >
+                            {category.title}
+                        </span>
+                    ))}
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <div className="flex items-center space-x-4">
+                        <div className="flex items-center text-gray-500 dark:text-gray-400">
+                            <ThumbsUp className="w-4 h-4 mr-1.5" />
+                            <span className="text-sm">{post.likesCount}</span>
+                        </div>
+                        <div className="flex items-center text-gray-500 dark:text-gray-400">
+                            <MessageCircle className="w-4 h-4 mr-1.5" />
+                            <span className="text-sm">{post.commentsCount}</span>
+                        </div>
                     </div>
-                    <div className="flex items-center">
-                        <svg className="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                        </svg>
-                        {post.commentsCount} comments
-                    </div>
+                    <button
+                        onClick={() => navigate(`/post/${post.id}`)}
+                        className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                    >
+                        Read more
+                    </button>
                 </div>
             </div>
         </article>
     );
 
-    // ... (previous code remains the same until the final return statement)
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-            <div className="container mx-auto px-4 py-8 max-w-6xl">
-                {/* Header Section */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 space-y-4 md:space-y-0">
+        <div className="min-h-screen">
+            <div className="container mx-auto px-4 py-12 max-w-6xl">
+                <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 space-y-4 md:space-y-0">
                     <div className="flex flex-col">
-                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
+                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
                             Recent Posts
                         </h1>
-                        <p className="text-gray-600 dark:text-gray-400 mt-1">
+                        <p className="text-gray-600 dark:text-gray-400 mt-2">
                             {totalPosts} posts found
                             {filters.categoryIds?.length ? ` in selected categories` : ''}
                         </p>
@@ -338,119 +383,92 @@ export const MainPage = () => {
 
                     <button
                         onClick={() => navigate('/create-post')}
-                        className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-150 shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900"
+                        className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900"
                     >
-                        <svg
-                            className="w-5 h-5 mr-2"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 4v16m8-8H4"
-                            />
-                        </svg>
+                        <Plus className="w-5 h-5 mr-2" />
                         Create Post
                     </button>
                 </div>
 
-                {/* Filters Section */}
                 <FilterBar />
-
-                {/* Content Section */}
                 {loading ? (
-                    // Loading State
-                    <div className="grid gap-6 md:grid-cols-2">
+                    <div className="grid gap-8 md:grid-cols-2">
                         {[...Array(4)].map((_, i) => (
-                            <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                                <div className="animate-pulse space-y-4">
-                                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
-                                    <div className="space-y-2">
-                                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full" />
-                                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
-                                    </div>
-                                    <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded" />
-                                    <div className="flex space-x-2">
-                                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16" />
-                                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16" />
+                            <div key={i} className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
+                                <div className="animate-pulse">
+                                    <div className="aspect-video bg-gray-200 dark:bg-gray-700" />
+                                    <div className="p-6 space-y-4">
+                                        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-lg w-3/4" />
+                                        <div className="space-y-2">
+                                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-lg w-full" />
+                                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-lg w-5/6" />
+                                        </div>
+                                        <div className="flex space-x-2">
+                                            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-lg w-20" />
+                                            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-lg w-20" />
+                                        </div>
+                                        <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
+                                            <div className="flex justify-between">
+                                                <div className="flex space-x-2">
+                                                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-12" />
+                                                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-12" />
+                                                </div>
+                                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20" />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         ))}
                     </div>
                 ) : error ? (
-                    // Error State
-                    <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 p-4 rounded-lg">
-                        <div className="flex">
-                            <svg
-                                className="w-5 h-5 mr-2"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl p-6 shadow-lg">
+                        <div className="flex items-center space-x-3">
+                            <div className="flex-shrink-0">
+                                <svg className="h-6 w-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-lg font-medium text-red-800 dark:text-red-300">Error Loading Posts</h3>
+                                <p className="mt-1 text-red-700 dark:text-red-400">{error}</p>
+                            </div>
+                            <button
+                                onClick={() => fetchPosts(currentPage, sortBy, filters)}
+                                className="flex-shrink-0 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
                             >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                />
-                            </svg>
-                            {error}
+                                Try Again
+                            </button>
                         </div>
                     </div>
                 ) : posts.length === 0 ? (
-                    // No Posts State
-                    <div className="text-center py-12">
-                        <svg
-                            className="mx-auto h-12 w-12 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                            />
-                        </svg>
-                        <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No posts found</h3>
-                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                            {filters.categoryIds?.length
-                                ? 'Try selecting different categories or clearing the filters'
-                                : 'Get started by creating a new post'}
-                        </p>
-                        {!filters.categoryIds?.length && (
-                            <div className="mt-6">
+                    <div className="text-center py-16 px-4">
+                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 max-w-lg mx-auto">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 mb-6">
+                                <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                </svg>
+                            </div>
+                            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">No posts found</h3>
+                            <p className="text-gray-600 dark:text-gray-400 mb-6">
+                                {filters.categoryIds?.length
+                                    ? 'Try selecting different categories or clearing the filters'
+                                    : 'Get started by creating your first post'}
+                            </p>
+                            {!filters.categoryIds?.length && (
                                 <button
                                     onClick={() => navigate('/create-post')}
-                                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900"
+                                    className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
                                 >
-                                    <svg
-                                        className="w-5 h-5 mr-2"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M12 4v16m8-8H4"
-                                        />
-                                    </svg>
-                                    Create New Post
+                                    <Plus className="w-5 h-5 mr-2" />
+                                    Create First Post
                                 </button>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 ) : (
-                    // Posts Grid
                     <>
-                        <div className="grid gap-6 md:grid-cols-2">
+                        <div className="grid gap-8 md:grid-cols-2">
                             {posts.map((post) => (
                                 <PostCard key={post.id} post={post} />
                             ))}

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PostsService } from '../../services';
+import { X, Upload, ChevronLeft, Loader2 } from 'lucide-react';
 import axios from 'axios';
 import config from '../../config';
 
@@ -19,6 +20,7 @@ export const CreatePostPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [dragActive, setDragActive] = useState(false);
     const [formData, setFormData] = useState({
         title: '',
         content: '',
@@ -40,25 +42,50 @@ export const CreatePostPage = () => {
         fetchCategories();
     }, []);
 
+    const handleDrag = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true);
+        } else if (e.type === "dragleave") {
+            setDragActive(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+
+        const file = e.dataTransfer.files?.[0];
+        if (file) {
+            handleFileValidation(file);
+        }
+    };
+
+    const handleFileValidation = (file: File) => {
+        const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        if (!validTypes.includes(file.type)) {
+            setError('Invalid file type. Only JPEG, PNG and GIF are allowed');
+            return;
+        }
+        if (file.size > MAX_FILE_SIZE) {
+            setError('File is too large. Maximum size is 5MB');
+            return;
+        }
+        setFormData(prev => ({ ...prev, image: file }));
+        setError(null);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setImagePreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+    };
+
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
-            if (!validTypes.includes(file.type)) {
-                setError('Invalid file type. Only JPEG, PNG and GIF are allowed');
-                return;
-            }
-            if (file.size > MAX_FILE_SIZE) {
-                setError('File is too large. Maximum size is 5MB');
-                return;
-            }
-            setFormData(prev => ({ ...prev, image: file }));
-            setError(null);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
+            handleFileValidation(file);
         }
     };
 
@@ -96,31 +123,41 @@ export const CreatePostPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-            <div className="container mx-auto px-4 max-w-3xl">
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                    <div className="flex items-center justify-between mb-6">
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Create New Post</h1>
-                        <button
-                            onClick={() => navigate('/')}
-                            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
-                        >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
+        <div className="min-h-screen py-12">
+            <div className="container mx-auto px-4 max-w-4xl">
+                {/* Back Navigation */}
+                <button
+                    onClick={() => navigate('/')}
+                    className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 mb-6 group"
+                >
+                    <ChevronLeft className="w-5 h-5 mr-1 transition-transform group-hover:-translate-x-1" />
+                    Back to Posts
+                </button>
+
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-8">
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">
+                        Create New Post
+                    </h1>
 
                     {error && (
-                        <div className="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 p-4 rounded-md">
-                            {error}
+                        <div className="mb-8 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl p-4">
+                            <div className="flex items-center space-x-3">
+                                <div className="flex-shrink-0">
+                                    <svg className="h-5 w-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div className="flex-1 text-red-700 dark:text-red-400">
+                                    {error}
+                                </div>
+                            </div>
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Title and Content fields remain the same */}
+                    <form onSubmit={handleSubmit} className="space-y-8">
+                        {/* Title Input */}
                         <div>
-                            <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Title
                             </label>
                             <input
@@ -129,13 +166,14 @@ export const CreatePostPage = () => {
                                 required
                                 value={formData.title}
                                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Enter post title"
+                                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                placeholder="Enter an engaging title..."
                             />
                         </div>
 
+                        {/* Content Textarea */}
                         <div>
-                            <label htmlFor="content" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            <label htmlFor="content" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Content
                             </label>
                             <textarea
@@ -143,49 +181,56 @@ export const CreatePostPage = () => {
                                 required
                                 value={formData.content}
                                 onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                                rows={6}
-                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                rows={8}
+                                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                 placeholder="Write your post content..."
                             />
                         </div>
 
                         {/* Categories Selection */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                                 Categories
                             </label>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-wrap gap-3">
                                 {categories.map(category => (
-                                    <div key={category.id} className="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            id={`category-${category.id}`}
-                                            checked={formData.categoryIds.includes(category.id)}
-                                            onChange={() => handleCategoryChange(category.id)}
-                                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                        />
-                                        <label
-                                            htmlFor={`category-${category.id}`}
-                                            className="ml-2 block text-sm text-gray-700 dark:text-gray-300"
-                                        >
-                                            {category.title}
-                                        </label>
-                                    </div>
+                                    <button
+                                        key={category.id}
+                                        type="button"
+                                        onClick={() => handleCategoryChange(category.id)}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${formData.categoryIds.includes(category.id)
+                                            ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 ring-2 ring-blue-500'
+                                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                            }`}
+                                    >
+                                        {category.title}
+                                    </button>
                                 ))}
                             </div>
                         </div>
 
-                        {/* Image upload section remains the same */}
+                        {/* Image Upload */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Image</label>
-                            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md">
-                                <div className="space-y-1 text-center">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Cover Image
+                            </label>
+                            <div
+                                onDragEnter={handleDrag}
+                                onDragLeave={handleDrag}
+                                onDragOver={handleDrag}
+                                onDrop={handleDrop}
+                                className={`relative mt-1 flex justify-center px-6 pt-5 pb-6 border-2 ${dragActive
+                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                    : 'border-gray-300 dark:border-gray-600'
+                                    } border-dashed rounded-xl transition-colors`}
+                            >
+                                <div className="space-y-3 text-center">
                                     {imagePreview ? (
-                                        <div className="relative">
+                                        <div className="relative inline-block">
                                             <img
                                                 src={imagePreview}
                                                 alt="Preview"
-                                                className="mx-auto h-32 w-auto rounded"
+                                                className="h-48 w-auto rounded-lg shadow-md"
                                             />
                                             <button
                                                 type="button"
@@ -196,33 +241,18 @@ export const CreatePostPage = () => {
                                                         fileInputRef.current.value = '';
                                                     }
                                                 }}
-                                                className="absolute top-0 right-0 -mt-2 -mr-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                                className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
                                             >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
+                                                <X className="w-4 h-4" />
                                             </button>
                                         </div>
                                     ) : (
                                         <>
-                                            <svg
-                                                className="mx-auto h-12 w-12 text-gray-400"
-                                                stroke="currentColor"
-                                                fill="none"
-                                                viewBox="0 0 48 48"
-                                                aria-hidden="true"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                                                />
-                                            </svg>
+                                            <Upload className="mx-auto h-12 w-12 text-gray-400" />
                                             <div className="flex text-sm text-gray-600 dark:text-gray-400">
                                                 <label
                                                     htmlFor="image-upload"
-                                                    className="relative cursor-pointer bg-white dark:bg-gray-700 rounded-md font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
+                                                    className="relative cursor-pointer rounded-md font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
                                                 >
                                                     <span>Upload a file</span>
                                                     <input
@@ -237,27 +267,37 @@ export const CreatePostPage = () => {
                                                 </label>
                                                 <p className="pl-1">or drag and drop</p>
                                             </div>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, or GIF up to 5MB</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                PNG, JPG, or GIF up to 5MB
+                                            </p>
                                         </>
                                     )}
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex justify-end space-x-4 pt-4">
+                        {/* Form Actions */}
+                        <div className="flex justify-end space-x-4 pt-6">
                             <button
                                 type="button"
                                 onClick={() => navigate('/')}
-                                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
+                                className="px-6 py-3 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors dark:focus:ring-offset-gray-900"
+                                className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors dark:focus:ring-offset-gray-900 shadow-lg hover:shadow-xl"
                             >
-                                {loading ? 'Creating...' : 'Create Post'}
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                        Creating...
+                                    </>
+                                ) : (
+                                    'Create Post'
+                                )}
                             </button>
                         </div>
                     </form>
