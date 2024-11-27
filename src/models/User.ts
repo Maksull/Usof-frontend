@@ -17,6 +17,8 @@ export class User {
     posts: Post[];
     comments: Comment[];
     likes: Like[];
+    postsCount: number;
+    commentsCount: number;
 
     constructor(
         id: number,
@@ -24,6 +26,8 @@ export class User {
         password: string,
         fullName: string,
         email: string,
+        postsCount: number,
+        commentsCount: number,
         profilePicture?: string,
         rating: number = 0,
         role: UserRole = UserRole.USER,
@@ -36,6 +40,8 @@ export class User {
         this.password = password;
         this.fullName = fullName;
         this.email = email;
+        this.postsCount = postsCount;
+        this.commentsCount = commentsCount;
         this.profilePicture = profilePicture;
         this.rating = rating;
         this.role = role;

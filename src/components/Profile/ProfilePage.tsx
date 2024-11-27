@@ -18,6 +18,7 @@ import {
     Loader2,
     BadgeCheck
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface EditableUserData {
     fullName: string;
@@ -95,7 +96,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) 
         e.preventDefault();
         setIsLoading(true);
         try {
-            await axios.post(`${config.backendUrl} /auth/initiate - email - change`);
+            await axios.post(`${config.backendUrl}/auth/initiate-email-change`);
             setModalStatus('success');
             setModalMessage('Email change instructions have been sent to your email.');
             setIsModalOpen(true);
@@ -116,7 +117,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) 
         e.preventDefault();
         setIsLoading(true);
         try {
-            await axios.post(`${config.backendUrl} /auth/initiate - password - change`);
+            await axios.post(`${config.backendUrl}/auth/initiate-password-change`);
             setModalStatus('success');
             setModalMessage('Password reset instructions have been sent to your email.');
             setIsModalOpen(true);
@@ -379,25 +380,29 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) 
 
             {/* Activity Section */}
             <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 
-                              transition-all duration-300">
+                <Link
+                    to="/my-posts"
+                    className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl"
+                >
                     <div className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                         Posts
                     </div>
                     <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                        {user.posts?.length || 0}
+                        {user.postsCount || 0}
                     </div>
-                </div>
+                </Link>
 
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 
-                              transition-all duration-300">
+                <Link
+                    to="/my-comments"
+                    className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl"
+                >
                     <div className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                         Comments
                     </div>
                     <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                        {user.comments?.length || 0}
+                        {user.commentsCount || 0}
                     </div>
-                </div>
+                </Link>
 
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 
                               transition-all duration-300">

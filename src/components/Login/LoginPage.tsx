@@ -9,7 +9,9 @@ import {
     LogIn,
     Loader2,
     AlertCircle,
-    KeyRound
+    KeyRound,
+    Eye,
+    EyeOff
 } from 'lucide-react';
 
 interface LoginPageProps {
@@ -22,8 +24,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
     const [fullName, setFullName] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -65,14 +69,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     return (
         <div className="min-h-screen flex items-center justify-center p-4">
             <div className="max-w-md w-full">
-                {/* Card */}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl 
-                              overflow-hidden transition-all duration-300">
-                    {/* Header */}
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300">
                     <div className="px-8 pt-8">
                         <div className="text-center space-y-3">
-                            <div className="inline-flex items-center justify-center w-16 h-16 
-                                          rounded-full bg-blue-100 dark:bg-blue-900/30 mb-4">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 mb-4">
                                 {isRegister ? (
                                     <UserPlus className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                                 ) : (
@@ -83,27 +83,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                                 {isRegister ? 'Create Account' : 'Welcome Back'}
                             </h2>
                             <p className="text-gray-600 dark:text-gray-400">
-                                {isRegister
-                                    ? 'Sign up to get started with your new account'
-                                    : 'Sign in to continue to your account'}
+                                {isRegister ? 'Sign up to get started with your new account' : 'Sign in to continue to your account'}
                             </p>
                         </div>
 
-                        {/* Error Message */}
                         {error && (
-                            <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border 
-                                          border-red-200 dark:border-red-800/50 rounded-xl 
-                                          flex items-center space-x-3">
+                            <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl flex items-center space-x-3">
                                 <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
                                 <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
                             </div>
                         )}
                     </div>
 
-                    {/* Form */}
                     <form onSubmit={handleSubmit} className="p-8 pt-6 space-y-6">
                         <div className="space-y-4">
-                            {/* Username */}
                             <div className="relative">
                                 <IconWrapper>
                                     <User className="w-5 h-5" />
@@ -119,23 +112,35 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                                 />
                             </div>
 
-                            {/* Password */}
                             <div className="relative">
                                 <IconWrapper>
                                     <Lock className="w-5 h-5" />
                                 </IconWrapper>
                                 <input
                                     id="password"
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className={inputBaseClasses}
+                                    className={`${inputBaseClasses} pr-12`}
                                     placeholder="Password"
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 
+                                             text-gray-400 hover:text-gray-600 dark:text-gray-500 
+                                             dark:hover:text-gray-300 transition-colors"
+                                    tabIndex={-1}
+                                >
+                                    {showPassword ? (
+                                        <EyeOff className="h-5 w-5" />
+                                    ) : (
+                                        <Eye className="h-5 w-5" />
+                                    )}
+                                </button>
                             </div>
 
-                            {/* Registration Fields */}
                             {isRegister && (
                                 <>
                                     <div className="relative">
@@ -170,17 +175,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                             )}
                         </div>
 
-                        {/* Submit Button */}
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full px-4 py-3 text-sm font-medium text-white 
-                                     bg-blue-600 hover:bg-blue-700 rounded-lg
-                                     focus:outline-none focus:ring-2 focus:ring-offset-2 
-                                     focus:ring-blue-500 transition-all duration-200
-                                     disabled:opacity-50 disabled:cursor-not-allowed
-                                     shadow-lg hover:shadow-xl
-                                     flex items-center justify-center space-x-2"
+                            className="w-full px-4 py-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 
+                                     rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 
+                                     transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed 
+                                     shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
                         >
                             {isLoading ? (
                                 <>
@@ -189,27 +190,25 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                                 </>
                             ) : (
                                 <>
-                                    {isRegister ? <UserPlus className="w-5 h-5" /> : <LogIn className="w-5 h-5" />}
+                                    {isRegister ? <UserPlus className="w-5 h-5" /> : <LogIn />}
                                     <span>{isRegister ? 'Create Account' : 'Sign In'}</span>
                                 </>
                             )}
                         </button>
 
-                        {/* Toggle Register/Login */}
                         <div className="text-center">
                             <button
                                 type="button"
                                 onClick={() => {
                                     setIsRegister(!isRegister);
                                     setError(null);
+                                    setPassword('');
+                                    setShowPassword(false);
                                 }}
-                                className="text-sm text-blue-600 hover:text-blue-500 
-                                         dark:text-blue-400 dark:hover:text-blue-300 
-                                         transition-colors duration-200"
+                                className="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 
+                                         dark:hover:text-blue-300 transition-colors duration-200"
                             >
-                                {isRegister
-                                    ? 'Already have an account? Sign in'
-                                    : 'Need an account? Register'}
+                                {isRegister ? 'Already have an account? Sign in' : 'Need an account? Register'}
                             </button>
                         </div>
                     </form>

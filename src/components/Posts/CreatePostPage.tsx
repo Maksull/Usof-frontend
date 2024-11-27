@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { PostsService } from '../../services';
 import { X, Upload, ChevronLeft, Loader2 } from 'lucide-react';
 import axios from 'axios';
@@ -126,13 +126,13 @@ export const CreatePostPage = () => {
         <div className="min-h-screen py-12">
             <div className="container mx-auto px-4 max-w-4xl">
                 {/* Back Navigation */}
-                <button
-                    onClick={() => navigate('/')}
+                <Link
+                    to={`/`}
                     className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 mb-6 group"
                 >
                     <ChevronLeft className="w-5 h-5 mr-1 transition-transform group-hover:-translate-x-1" />
                     Back to Posts
-                </button>
+                </Link>
 
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-8">
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">
@@ -278,13 +278,12 @@ export const CreatePostPage = () => {
 
                         {/* Form Actions */}
                         <div className="flex justify-end space-x-4 pt-6">
-                            <button
-                                type="button"
-                                onClick={() => navigate('/')}
+                            <Link
+                                to={`/`}
                                 className="px-6 py-3 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
                             >
                                 Cancel
-                            </button>
+                            </Link>
                             <button
                                 type="submit"
                                 disabled={loading}

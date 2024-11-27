@@ -1,12 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-    BrowserRouter as Router,
-    Routes,
-    Route,
-    Navigate,
-    useLocation
-} from 'react-router-dom';
-import { LanguageProvider, ThemeProvider } from "./contexts";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { User } from './models/User';
 import {
     ChangeEmailPage,
@@ -23,8 +16,9 @@ import {
 import { AuthService, UsersService } from './services';
 import { mapDtoToUser } from './utils/mapping';
 import { Loader2 } from 'lucide-react';
+import { UserComments } from './components/Profile/UserComments';
+import { UserPosts } from './components/Profile/UserPosts';
 
-// Loading Spinner Component
 const LoadingSpinner = () => (
     <div className="fixed inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-50">
         <div className="flex flex-col items-center space-y-4">
@@ -36,14 +30,11 @@ const LoadingSpinner = () => (
     </div>
 );
 
-// ScrollToTop Component
 const ScrollToTop = () => {
     const { pathname } = useLocation();
-
     useEffect(() => {
         window.scrollTo(0, 0);
     }, [pathname]);
-
     return null;
 };
 
@@ -52,10 +43,10 @@ function App() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showNotification, setShowNotification] = useState(false);
+    const [isInitialized, setIsInitialized] = useState(false);
 
-    // Initialize user session
     useEffect(() => {
-        const initializeUser = async () => {
+        const initializeAuth = async () => {
             if (AuthService.isAuthenticated()) {
                 try {
                     const userProfile = mapDtoToUser(await UsersService.getUserProfile());
@@ -68,9 +59,10 @@ function App() {
                 }
             }
             setIsLoading(false);
+            setIsInitialized(true);
         };
 
-        initializeUser();
+        initializeAuth();
     }, []);
 
     const handleLogin = async () => {
@@ -102,101 +94,61 @@ function App() {
         }
     };
 
+    // Show loading spinner while checking authentication
+    if (!isInitialized) {
+        return <LoadingSpinner />;
+    }
+
     return (
-        <LanguageProvider>
-            <ThemeProvider>
-                <Router>
-                    <ScrollToTop />
-                    <div className="min-h-screen flex flex-col 
-                bg-gradient-to-br from-blue-50 via-gray-50 to-gray-100 
-                dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 
-                transition-colors duration-300">
-                        <Header
-                            currentUser={user}
-                            onLogout={handleLogout}
-                            onLogin={() => window.location.href = '/login'}
-                        />
-
-                        <main className="flex-grow relative">
-                            {isLoading && <LoadingSpinner />}
-
-                            <div className="container mx-auto px-4 py-6">
-                                <Routes>
-                                    <Route
-                                        path="/login"
-                                        element={
-                                            user ? (
-                                                <Navigate to="/" replace />
-                                            ) : (
-                                                <LoginPage onLogin={handleLogin} />
-                                            )
-                                        }
-                                    />
-
-                                    <Route path="/" element={<MainPage />} />
-
-                                    <Route
-                                        path="/profile"
-                                        element={
-                                            user ? (
-                                                <ProfilePage
-                                                    user={user}
-                                                    onUserUpdate={setUser}
-                                                />
-                                            ) : (
-                                                <Navigate to="/login" replace />
-                                            )
-                                        }
-                                    />
-
-                                    <Route
-                                        path="/create-post"
-                                        element={
-                                            user ? (
-                                                <CreatePostPage />
-                                            ) : (
-                                                <Navigate to="/login" replace />
-                                            )
-                                        }
-                                    />
-
-                                    <Route
-                                        path="/post/:id"
-                                        element={<PostPage />}
-                                    />
-
-                                    <Route
-                                        path="/reset-password/:token"
-                                        element={<ChangePasswordPage />}
-                                    />
-
-                                    <Route
-                                        path="/change-email/:token"
-                                        element={<ChangeEmailPage />}
-                                    />
-
-                                    {!user && (
-                                        <Route
-                                            path="*"
-                                            element={<Navigate to="/login" replace />}
-                                        />
-                                    )}
-                                </Routes>
-                            </div>
-                        </main>
-
-                        <Footer />
-
-                        <NotificationModal
-                            isOpen={showNotification}
-                            onClose={() => setShowNotification(false)}
-                            status="error"
-                            message={error || ''}
-                        />
+        <Router>
+            <ScrollToTop />
+            <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
+                <Header
+                    currentUser={user}
+                    onLogout={handleLogout}
+                    onLogin={() => window.location.href = '/login'}
+                />
+                <main className="flex-grow relative">
+                    {isLoading && <LoadingSpinner />}
+                    <div className="container mx-auto px-4 py-6">
+                        <Routes>
+                            <Route
+                                path="/login"
+                                element={user ? <Navigate to="/" replace /> : <LoginPage onLogin={handleLogin} />}
+                            />
+                            <Route path="/" element={<MainPage />} />
+                            <Route
+                                path="/profile"
+                                element={user ? <ProfilePage user={user} onUserUpdate={setUser} /> : <Navigate to="/login" replace />}
+                            />
+                            <Route
+                                path="/create-post"
+                                element={user ? <CreatePostPage /> : <Navigate to="/login" replace />}
+                            />
+                            <Route path="/post/:id" element={<PostPage />} />
+                            <Route
+                                path="/my-comments"
+                                element={user ? <UserComments user={user} /> : <Navigate to="/login" replace />}
+                            />
+                            <Route
+                                path="/my-posts"
+                                element={user ? <UserPosts user={user} /> : <Navigate to="/login" replace />}
+                            />
+                            <Route path="/reset-password/:token" element={<ChangePasswordPage />} />
+                            <Route path="/change-email/:token" element={<ChangeEmailPage />} />
+                            {!user && <Route path="*" element={<Navigate to="/login" replace />} />}
+                        </Routes>
                     </div>
-                </Router>
-            </ThemeProvider>
-        </LanguageProvider>
+                </main>
+                <Footer />
+                <NotificationModal
+                    isOpen={showNotification}
+                    onClose={() => setShowNotification(false)}
+                    status="error"
+                    message={error || ''}
+                />
+            </div>
+        </Router>
     );
 }
 
