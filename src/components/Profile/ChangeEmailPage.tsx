@@ -3,7 +3,7 @@ import { NotificationModal } from "..";
 import { AuthService } from "../../services";
 import axios from "axios";
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import config from "../../config";
 
 type ModalStatus = 'success' | 'error';
@@ -53,14 +53,14 @@ export const ChangeEmailPage: React.FC = () => {
     return (
         <div className="min-h-screen py-12 px-4 sm:px-6">
             <div className="max-w-md mx-auto">
-                <button
-                    onClick={() => navigate('/')}
+                <Link
+                    to={`/`}
                     className="mb-6 flex items-center text-gray-600 dark:text-gray-400 
                              hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 >
                     <ChevronLeft className="w-5 h-5 mr-1" />
                     Back to Home
-                </button>
+                </Link>
 
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl 
                               overflow-hidden transition-all duration-300">
@@ -107,17 +107,16 @@ export const ChangeEmailPage: React.FC = () => {
                             </div>
 
                             <div className="flex items-center justify-end space-x-4 pt-2">
-                                <button
-                                    type="button"
-                                    onClick={() => navigate('/')}
+                                <Link
+                                    to={`/`}
                                     className="px-4 py-2 text-sm font-medium text-gray-700 
                                              bg-gray-100 hover:bg-gray-200 dark:text-gray-300 
                                              dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg 
-                                             transition-colors flex items-center space-x-2"
+                                             transition-colors flex items-center space-x-"
                                 >
                                     <X className="w-4 h-4" />
                                     <span>Cancel</span>
-                                </button>
+                                </Link>
 
                                 <button
                                     type="submit"

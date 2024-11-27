@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Post as PostModel } from '../../models/Post';
 import { CommentsService, LikesService, PostsService } from '../../services';
 import { Category } from '../../models';
@@ -18,7 +18,8 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import config from '../../config';
-import { CommentComponent } from './CommentComponent';
+import { CommentComponent } from '..';
+import { PostCommentFilter } from './PostCommentFilter';
 
 // Types and interfaces
 export interface ExtendedPost extends PostModel {
@@ -45,8 +46,7 @@ interface PostEditFormProps {
     onSubmit: (formData: FormData) => Promise<void>;
     loading: boolean;
     error: string | null;
-}
-interface CommentSectionProps {
+}interface CommentSectionProps {
     post: ExtendedPost;
     onCommentPost: (content: string) => Promise<void>;
     isSubmitting: boolean;
@@ -54,7 +54,7 @@ interface CommentSectionProps {
     setPost: (post: ExtendedPost | null) => void;
     isLiking: boolean;
     onCommentLike: (commentId: number, isLike: boolean) => Promise<void>;
-};
+}
 
 // Utility functions
 export const transformToExtendedPost = (post: PostModel): ExtendedPost => ({
@@ -320,6 +320,14 @@ const PostEditForm: React.FC<PostEditFormProps> = ({
     );
 };
 
+
+interface FilterState {
+    dateInterval?: {
+        startDate: string;
+        endDate: string;
+    };
+}
+
 const CommentSection: React.FC<CommentSectionProps> = ({
     post,
     onCommentPost,
@@ -330,6 +338,52 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     onCommentLike
 }) => {
     const [content, setContent] = useState('');
+    const [sortBy, setSortBy] = useState('publishDate_DESC');
+    const [filters, setFilters] = useState<FilterState>({});
+    const [filteredComments, setFilteredComments] = useState(post.comments || []);
+
+    useEffect(() => {
+        let result = [...(post.comments || [])];
+
+        // Apply date filters
+        if (filters.dateInterval?.startDate || filters.dateInterval?.endDate) {
+            result = result.filter(comment => {
+                const commentDate = new Date(comment.publishDate);
+                const startDate = filters.dateInterval?.startDate ? new Date(filters.dateInterval.startDate) : null;
+                const endDate = filters.dateInterval?.endDate ? new Date(filters.dateInterval.endDate) : null;
+
+                if (startDate && endDate) {
+                    return commentDate >= startDate && commentDate <= endDate;
+                } else if (startDate) {
+                    return commentDate >= startDate;
+                } else if (endDate) {
+                    return commentDate <= endDate;
+                }
+                return true;
+            });
+        }
+
+        // Apply sorting
+        result.sort((a, b) => {
+            const [field, direction] = sortBy.split('_');
+            const multiplier = direction === 'DESC' ? -1 : 1;
+
+            switch (field) {
+                case 'publishDate':
+                    return multiplier * (new Date(a.publishDate).getTime() - new Date(b.publishDate).getTime());
+                case 'likesCount':
+                    const aLikes = a.likes?.filter(like => like.type === 'like').length || 0;
+                    const bLikes = b.likes?.filter(like => like.type === 'like').length || 0;
+                    return multiplier * (aLikes - bLikes);
+                case 'repliesCount':
+                    return multiplier * ((a.replies?.length || 0) - (b.replies?.length || 0));
+                default:
+                    return 0;
+            }
+        });
+
+        setFilteredComments(result);
+    }, [post.comments, filters, sortBy]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -338,40 +392,57 @@ const CommentSection: React.FC<CommentSectionProps> = ({
         }
     };
 
+    const handleSortChange = (newSort: string) => {
+        setSortBy(newSort);
+    };
+
+    const handleFilterChange = (newFilters: Partial<FilterState>) => {
+        setFilters(prev => ({ ...prev, ...newFilters }));
+    };
+
+    const handleResetAll = () => {
+        setSortBy('publishDate_DESC');
+        setFilters({});
+    };
+
     return (
         <div className="space-y-6">
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
                 <MessageSquare className="w-5 h-5 mr-2" />
-                Comments ({post.comments?.length || 0})
+                Comments ({filteredComments.length})
             </h2>
+
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="relative">
                     <textarea
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
                         placeholder="Share your thoughts..."
-                        className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 dark:border-gray-600 
-                                   bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
-                                   focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                         rows={3}
                     />
                     <button
                         type="submit"
                         disabled={isSubmitting || !content.trim()}
-                        className="absolute right-2 bottom-2 p-2 text-blue-600 dark:text-blue-400 
-                                   hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors
-                                   disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="absolute right-2 bottom-2 p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                        {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send />}
                     </button>
                 </div>
-                {error && (
-                    <div className="text-sm text-red-600 dark:text-red-400">{error}</div>
-                )}
+                {error && <div className="text-sm text-red-600 dark:text-red-400">{error}</div>}
             </form>
+
+            <PostCommentFilter
+                onSortChange={handleSortChange}
+                onFilterChange={handleFilterChange}
+                onResetAll={handleResetAll}
+                currentSort={sortBy}
+                filters={filters}
+            />
+
             <div className="space-y-6">
                 <CommentComponent
-                    comments={post.comments || []}
+                    comments={filteredComments}
                     setPost={setPost}
                     isLiking={isLiking}
                     onCommentLike={onCommentLike}
@@ -532,14 +603,14 @@ export const PostPage = () => {
                                     {error || 'Post not found'}
                                 </p>
                             </div>
-                            <button
-                                onClick={() => navigate('/')}
+                            <Link
+                                to={`/`}
                                 className="px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 
                                          bg-red-50 dark:bg-red-900/30 rounded-lg hover:bg-red-100 
                                          dark:hover:bg-red-900/50 transition-colors"
                             >
                                 Return Home
-                            </button>
+                            </Link>
                         </div>
                     </div>
                 </div>

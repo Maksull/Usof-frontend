@@ -8,6 +8,8 @@ export const mapDtoToUser = (dto: UserDto): User => {
         '', // password is empty as it's not returned from API
         dto.fullName,
         dto.email,
+        dto.postsCount,
+        dto.commentsCount,
         dto.profilePicture,
         dto.rating,
         dto.role,

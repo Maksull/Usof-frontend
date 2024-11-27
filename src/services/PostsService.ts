@@ -14,7 +14,7 @@ interface PaginationParams {
     pageSize: number;
 }
 
-type SortBy = 'publishDate' | 'likesCount' | 'commentsCount';
+type SortBy = string;
 
 interface GetPostsResponse {
     data: Post[];
@@ -56,12 +56,10 @@ export class PostsService {
 
     static async getPosts(
         filters: PostFilters = {},
-        sortBy: SortBy = 'publishDate',
+        sortBy: SortBy = 'publishDate_DESC',
         pagination: PaginationParams = { page: 1, pageSize: 10 }
     ): Promise<GetPostsResponse> {
         try {
-            console.log("Filters")
-            console.log(filters)
             const params = new URLSearchParams();
 
             if (filters.searchQuery) {
@@ -73,17 +71,23 @@ export class PostsService {
             params.append('pageSize', pagination.pageSize.toString());
 
             // Sorting
-            // Convert frontend sort values to backend expected values
-            const sortMapping: Record<SortBy, string> = {
-                publishDate: 'date',
-                likesCount: 'likes',
-                commentsCount: 'comments'
+            // Split sort value into field and direction
+            const [sortField, sortDirection = 'DESC'] = sortBy.split('_');
+
+            // Convert frontend sort field to backend expected field
+            const sortMapping: Record<string, string> = {
+                publishDate: 'publishDate',
+                likesCount: 'likesCount',
+                commentsCount: 'commentsCount',
+                title: 'title'
             };
-            params.append('sortBy', sortMapping[sortBy]);
+
+            params.append('sort', sortMapping[sortField] || 'publishDate');
+            params.append('sortDirection', sortDirection);
 
             // Filters
             if (filters.categoryIds?.length) {
-                filters.categoryIds.forEach(id => params.append('categoryIds', id.toString()));
+                params.append('categories', filters.categoryIds.join(','));
             }
 
             if (filters.dateInterval) {
