@@ -16,15 +16,6 @@ const resources = {
             },
             // Footer translations
             footer: {
-                about: "About Us",
-                careers: "Careers",
-                contact: "Contact",
-                documentation: "Documentation",
-                blog: "Blog",
-                support: "Support",
-                privacyPolicy: "Privacy Policy",
-                termsOfService: "Terms of Service",
-                cookiePolicy: "Cookie Policy",
                 allRightsReserved: "All rights reserved",
                 description: "Your best resource for asking and answering technical questions. Share knowledge with the community and grow together.",
             },
@@ -49,15 +40,6 @@ const resources = {
             },
             // Footer translations
             footer: {
-                about: "Про нас",
-                careers: "Кар'єра",
-                contact: "Контакти",
-                documentation: "Документація",
-                blog: "Блог",
-                support: "Підтримка",
-                privacyPolicy: "Політика конфіденційності",
-                termsOfService: "Умови використання",
-                cookiePolicy: "Політика щодо файлів cookie",
                 allRightsReserved: "Всі права захищені",
                 description: "Ваш найкращий ресурс для запитань та відповідей на технічні питання. Діліться знаннями зі спільнотою та розвивайтеся разом.",
             },

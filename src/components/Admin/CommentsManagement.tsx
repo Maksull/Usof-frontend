@@ -1,14 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import config from '../../config';
-import { Loader2, MessageSquare } from 'lucide-react';
+import { Comment, User } from '../../models';
 import { CommentFilterBar, DeleteModal, Pagination } from '..';
-import { User, Comment } from '../../models';
-import { CommentCard } from './CommentCard';
-
-interface UserCommentsProps {
-    user: User | null;
-}
+import { Loader2, MessageSquare } from 'lucide-react';
+import config from '../../config';
+import { CommentCard } from '../Profile/CommentCard';
 
 interface PaginationData {
     currentPage: number;
@@ -23,9 +19,14 @@ interface FilterState {
         endDate: string;
     };
     postTitleSearch?: string;
+    authorSearch?: string;
 }
 
-export const UserComments: React.FC<UserCommentsProps> = ({ user }) => {
+interface CommentsManagementProps {
+    currentUser: User | null;
+}
+
+export const CommentsManagement: React.FC<CommentsManagementProps> = ({ currentUser }) => {
     const [comments, setComments] = useState<Comment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -58,8 +59,11 @@ export const UserComments: React.FC<UserCommentsProps> = ({ user }) => {
             if (currentFilters.postTitleSearch) {
                 params.append('postTitle', currentFilters.postTitleSearch);
             }
+            if (currentFilters.authorSearch) {
+                params.append('author', currentFilters.authorSearch);
+            }
 
-            const response = await axios.get(`${config.backendUrl}/user/comments`, { params });
+            const response = await axios.get(`${config.backendUrl}/comments`, { params });
             setComments(response.data.comments);
             setPagination(response.data.pagination);
         } catch (error) {
@@ -72,6 +76,25 @@ export const UserComments: React.FC<UserCommentsProps> = ({ user }) => {
     useEffect(() => {
         fetchComments(pagination.currentPage, sortBy, filters);
     }, [pagination.currentPage, sortBy, filters]);
+
+    const handleDeleteComment = async () => {
+        if (!commentToDelete) return;
+        setIsDeletingComment(true);
+        try {
+            await axios.delete(`${config.backendUrl}/comments/${commentToDelete}`);
+            await fetchComments(pagination.currentPage, sortBy, filters);
+            setError(null);
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                setError(error.response?.data?.error || 'Failed to delete comment');
+            } else {
+                setError('Failed to delete comment');
+            }
+        } finally {
+            setIsDeletingComment(false);
+            setCommentToDelete(null);
+        }
+    };
 
     const handlePageChange = (newPage: number) => {
         if (newPage >= 1 && newPage <= pagination.totalPages) {
@@ -95,41 +118,13 @@ export const UserComments: React.FC<UserCommentsProps> = ({ user }) => {
         setPagination(prev => ({ ...prev, currentPage: 1 }));
     };
 
-    const handleDeleteComment = async () => {
-        if (!commentToDelete) return;
-        setIsDeletingComment(true);
-        try {
-            await axios.delete(`${config.backendUrl}/comments/${commentToDelete}`);
-            await fetchComments(pagination.currentPage, sortBy, filters);
-            const newTotalPages = Math.ceil((pagination.totalItems - 1) / pagination.itemsPerPage);
-            if (pagination.currentPage > newTotalPages && newTotalPages > 0) {
-                await fetchComments(newTotalPages, sortBy, filters);
-            }
-            setError(null);
-        } catch (error) {
-            if (axios.isAxiosError(error)) {
-                setError(error.response?.data?.error || 'Failed to delete comment');
-            } else {
-                setError('Failed to delete comment');
-            }
-        } finally {
-            setIsDeletingComment(false);
-            setCommentToDelete(null);
-        }
-    };
-
-    if (!user) return null;
-
     return (
-        <div className="max-w-7xl mx-auto p-4">
+        <div className="space-y-6">
             <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                     <MessageSquare className="w-6 h-6" />
-                    My Comments
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">
-                    Showing your comments across all posts
-                </p>
+                    Comments Management ({pagination.totalItems} total)
+                </h2>
             </div>
 
             <CommentFilterBar
@@ -155,7 +150,7 @@ export const UserComments: React.FC<UserCommentsProps> = ({ user }) => {
                             <CommentCard
                                 key={comment.id}
                                 comment={comment}
-                                currentUser={user}
+                                currentUser={currentUser}
                                 onDeleteClick={setCommentToDelete}
                             />
                         ))}
@@ -163,9 +158,7 @@ export const UserComments: React.FC<UserCommentsProps> = ({ user }) => {
 
                     {comments.length === 0 && (
                         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                            {Object.keys(filters).length > 0
-                                ? 'No comments found with the selected filters'
-                                : "You haven't made any comments yet"}
+                            No comments found with the selected filters
                         </div>
                     )}
 

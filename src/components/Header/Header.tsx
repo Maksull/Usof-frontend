@@ -9,12 +9,13 @@ import {
     ChevronDown,
     X,
     FileText,
-    MessageSquare
+    MessageSquare,
+    ShieldCheck
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts';
 import { useNavigate, Link } from 'react-router-dom';
-import { User } from '../../models';
+import { User, UserRole } from '../../models';
 
 interface HeaderProps {
     currentUser: User | null;
@@ -186,6 +187,16 @@ export const Header = ({ currentUser, onLogout, onLogin }: HeaderProps) => {
                                 {/* Dropdown Menu - remains the same */}
                                 {isProfileMenuOpen && (
                                     <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+                                        {currentUser?.role == UserRole.ADMIN && (
+                                            <Link
+                                                to="/admin"
+                                                className="px-4 py-2 text-sm text-purple-600 dark:text-purple-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                                                onClick={() => setIsMenuOpen(false)}
+                                            >
+                                                <ShieldCheck className="h-4 w-4 mr-2" />
+                                                Admin Panel
+                                            </Link>
+                                        )}
                                         <Link
                                             to="/profile"
                                             className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
