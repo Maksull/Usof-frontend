@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Plus } from 'lucide-react';
-import { Category, Post, PostStatus } from '../../models';
+import { Post, PostStatus } from '../../models';
 import { PostsFilterBar, Pagination, PostCard } from '..';
 import config from '../../config';
 
@@ -118,24 +118,10 @@ const useSearchQuery = (setFilters: React.Dispatch<React.SetStateAction<FilterSt
     }, [location.search, setFilters, setPagination]);
 };
 
-const useFetchCategories = (setCategories: React.Dispatch<React.SetStateAction<Category[]>>) => {
-    useEffect(() => {
-        const fetchCategories = async () => {
-            try {
-                const response = await axios.get(`${config.backendUrl}/categories`);
-                setCategories(response.data);
-            } catch (err) {
-                console.error('Error fetching categories:', err);
-            }
-        };
-        fetchCategories();
-    }, [setCategories]);
-};
 
 // Main component
 export const MainPage = () => {
     const [posts, setPosts] = useState<Post[]>([]);
-    const [categories, setCategories] = useState<Category[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [pagination, setPagination] = useState<PaginationState>({
@@ -148,7 +134,6 @@ export const MainPage = () => {
     const [filters, setFilters] = useState<FilterState>({});
 
     useSearchQuery(setFilters, setPagination);
-    useFetchCategories(setCategories);
 
     const fetchPosts = async (page: number, sort: string, currentFilters: FilterState) => {
         setIsLoading(true);
@@ -236,7 +221,6 @@ export const MainPage = () => {
                     onResetAll={handleResetAll}
                     currentSort={sortBy}
                     filters={filters}
-                    categories={categories}
                 />
 
                 {isLoading ? (

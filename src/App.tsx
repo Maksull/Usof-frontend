@@ -1,23 +1,11 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { User } from './models/User';
-import {
-    ChangeEmailPage,
-    ChangePasswordPage,
-    CreatePostPage,
-    Footer,
-    Header,
-    LoginPage,
-    MainPage,
-    PostPage,
-    ProfilePage,
-    NotificationModal
-} from './components';
+import { User, UserRole } from './models/User';
+import { ChangeEmailPage, ChangePasswordPage, CreatePostPage, Footer, Header, LoginPage, MainPage, PostPage, ProfilePage, NotificationModal, UserPosts, UserComments, AdminDashboard } from './components';
 import { AuthService, UsersService } from './services';
 import { mapDtoToUser } from './utils/mapping';
 import { Loader2 } from 'lucide-react';
-import { UserComments } from './components/Profile/UserComments';
-import { UserPosts } from './components/Profile/UserPosts';
+
 
 const LoadingSpinner = () => (
     <div className="fixed inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-50">
@@ -136,6 +124,14 @@ function App() {
                             />
                             <Route path="/reset-password/:token" element={<ChangePasswordPage />} />
                             <Route path="/change-email/:token" element={<ChangeEmailPage />} />
+                            <Route
+                                path="/admin"
+                                element={
+                                    user?.role == UserRole.ADMIN
+                                        ? <AdminDashboard currentUser={user} />
+                                        : <Navigate to="/" replace />
+                                }
+                            />
                             {!user && <Route path="*" element={<Navigate to="/login" replace />} />}
                         </Routes>
                     </div>

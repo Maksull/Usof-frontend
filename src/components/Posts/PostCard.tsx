@@ -1,13 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-    ThumbsUp,
-    ThumbsDown,
-    MessageSquare,
-    ImageIcon,
-    Trash2
-} from 'lucide-react';
-import { Post, LikeType, User } from '../../models';
+import { ThumbsUp, ThumbsDown, MessageSquare, ImageIcon, Trash2 } from 'lucide-react';
+import { Post, LikeType, User, UserRole } from '../../models';
 import { DeleteModal } from '..';
 
 interface PostCardProps {
@@ -19,20 +13,18 @@ interface PostCardProps {
 export const PostCard: React.FC<PostCardProps> = ({
     post,
     currentUser,
-    onDelete
+    onDelete,
 }) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-    const isCreator = currentUser?.id === post.authorId;
-    const canDelete = isCreator && onDelete;
+    const canDelete = currentUser &&
+        onDelete &&
+        (currentUser.id === post.authorId || currentUser.role == UserRole.ADMIN);
 
     return (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-all duration-300 h-full flex flex-col">
             <div className="flex justify-between items-start mb-4">
-                <Link
-                    to={`/post/${post.id}`}
-                    className="block group flex-1"
-                >
+                <Link to={`/post/${post.id}`} className="block group flex-1">
                     <div className="aspect-video rounded-lg overflow-hidden">
                         {post.image ? (
                             <img
@@ -58,10 +50,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                 )}
             </div>
 
-            <Link
-                to={`/post/${post.id}`}
-                className="group"
-            >
+            <Link to={`/post/${post.id}`} className="group">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                     {post.title}
                 </h2>
