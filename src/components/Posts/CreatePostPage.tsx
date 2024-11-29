@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { PostsService } from '../../services';
 import { X, Upload, ChevronLeft, Loader2 } from 'lucide-react';
 import axios from 'axios';
@@ -14,6 +15,7 @@ interface Category {
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 export const CreatePostPage = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(false);
@@ -34,13 +36,12 @@ export const CreatePostPage = () => {
                 const response = await axios.get(`${config.backendUrl}/categories`);
                 setCategories(response.data);
             } catch (err) {
-                setError('Failed to fetch categories');
+                setError(t('createPost.errors.fetchCategories'));
                 console.error('Fetch categories error:', err);
             }
         };
-
         fetchCategories();
-    }, []);
+    }, [t]);
 
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault();
@@ -56,7 +57,6 @@ export const CreatePostPage = () => {
         e.preventDefault();
         e.stopPropagation();
         setDragActive(false);
-
         const file = e.dataTransfer.files?.[0];
         if (file) {
             handleFileValidation(file);
@@ -66,11 +66,11 @@ export const CreatePostPage = () => {
     const handleFileValidation = (file: File) => {
         const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
         if (!validTypes.includes(file.type)) {
-            setError('Invalid file type. Only JPEG, PNG and GIF are allowed');
+            setError(t('createPost.errors.invalidFileType'));
             return;
         }
         if (file.size > MAX_FILE_SIZE) {
-            setError('File is too large. Maximum size is 5MB');
+            setError(t('createPost.errors.fileTooLarge'));
             return;
         }
         setFormData(prev => ({ ...prev, image: file }));
@@ -102,7 +102,6 @@ export const CreatePostPage = () => {
         e.preventDefault();
         setLoading(true);
         setError(null);
-
         try {
             const formDataToSend = new FormData();
             formDataToSend.append('title', formData.title);
@@ -111,11 +110,10 @@ export const CreatePostPage = () => {
                 formDataToSend.append('image', formData.image);
             }
             formDataToSend.append('categoryIds', JSON.stringify(formData.categoryIds));
-
             await PostsService.createPost(formDataToSend);
             navigate('/');
         } catch (err) {
-            setError('Failed to create post. Please try again.');
+            setError(t('createPost.errors.createFailed'));
             console.error('Create post error:', err);
         } finally {
             setLoading(false);
@@ -125,18 +123,17 @@ export const CreatePostPage = () => {
     return (
         <div className="min-h-screen py-12">
             <div className="container mx-auto px-4 max-w-4xl">
-                {/* Back Navigation */}
                 <Link
                     to={`/`}
                     className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 mb-6 group"
                 >
                     <ChevronLeft className="w-5 h-5 mr-1 transition-transform group-hover:-translate-x-1" />
-                    Back to Posts
+                    {t('createPost.backToPosts')}
                 </Link>
 
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-8">
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">
-                        Create New Post
+                        {t('createPost.title')}
                     </h1>
 
                     {error && (
@@ -155,10 +152,9 @@ export const CreatePostPage = () => {
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-8">
-                        {/* Title Input */}
                         <div>
                             <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Title
+                                {t('createPost.form.title')}
                             </label>
                             <input
                                 type="text"
@@ -167,14 +163,13 @@ export const CreatePostPage = () => {
                                 value={formData.title}
                                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                                placeholder="Enter an engaging title..."
+                                placeholder={t('createPost.form.titlePlaceholder')}
                             />
                         </div>
 
-                        {/* Content Textarea */}
                         <div>
                             <label htmlFor="content" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Content
+                                {t('createPost.form.content')}
                             </label>
                             <textarea
                                 id="content"
@@ -183,14 +178,13 @@ export const CreatePostPage = () => {
                                 onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
                                 rows={8}
                                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                                placeholder="Write your post content..."
+                                placeholder={t('createPost.form.contentPlaceholder')}
                             />
                         </div>
 
-                        {/* Categories Selection */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                                Categories
+                                {t('createPost.form.categories')}
                             </label>
                             <div className="flex flex-wrap gap-3">
                                 {categories.map(category => (
@@ -199,8 +193,8 @@ export const CreatePostPage = () => {
                                         type="button"
                                         onClick={() => handleCategoryChange(category.id)}
                                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${formData.categoryIds.includes(category.id)
-                                            ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 ring-2 ring-blue-500'
-                                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                                ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 ring-2 ring-blue-500'
+                                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                                             }`}
                                     >
                                         {category.title}
@@ -209,10 +203,9 @@ export const CreatePostPage = () => {
                             </div>
                         </div>
 
-                        {/* Image Upload */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Cover Image
+                                {t('createPost.form.coverImage')}
                             </label>
                             <div
                                 onDragEnter={handleDrag}
@@ -220,18 +213,14 @@ export const CreatePostPage = () => {
                                 onDragOver={handleDrag}
                                 onDrop={handleDrop}
                                 className={`relative mt-1 flex justify-center px-6 pt-5 pb-6 border-2 ${dragActive
-                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                                    : 'border-gray-300 dark:border-gray-600'
+                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                        : 'border-gray-300 dark:border-gray-600'
                                     } border-dashed rounded-xl transition-colors`}
                             >
                                 <div className="space-y-3 text-center">
                                     {imagePreview ? (
                                         <div className="relative inline-block">
-                                            <img
-                                                src={imagePreview}
-                                                alt="Preview"
-                                                className="h-48 w-auto rounded-lg shadow-md"
-                                            />
+                                            <img src={imagePreview} alt={t('createPost.form.imagePreview')} className="h-48 w-auto rounded-lg shadow-md" />
                                             <button
                                                 type="button"
                                                 onClick={() => {
@@ -254,7 +243,7 @@ export const CreatePostPage = () => {
                                                     htmlFor="image-upload"
                                                     className="relative cursor-pointer rounded-md font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
                                                 >
-                                                    <span>Upload a file</span>
+                                                    <span>{t('createPost.form.uploadFile')}</span>
                                                     <input
                                                         id="image-upload"
                                                         ref={fileInputRef}
@@ -265,10 +254,10 @@ export const CreatePostPage = () => {
                                                         onChange={handleImageChange}
                                                     />
                                                 </label>
-                                                <p className="pl-1">or drag and drop</p>
+                                                <p className="pl-1">{t('createPost.form.orDragDrop')}</p>
                                             </div>
                                             <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                PNG, JPG, or GIF up to 5MB
+                                                {t('createPost.form.imageRequirements')}
                                             </p>
                                         </>
                                     )}
@@ -276,13 +265,12 @@ export const CreatePostPage = () => {
                             </div>
                         </div>
 
-                        {/* Form Actions */}
                         <div className="flex justify-end space-x-4 pt-6">
                             <Link
                                 to={`/`}
                                 className="px-6 py-3 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
                             >
-                                Cancel
+                                {t('common.cancel')}
                             </Link>
                             <button
                                 type="submit"
@@ -292,10 +280,10 @@ export const CreatePostPage = () => {
                                 {loading ? (
                                     <>
                                         <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                        Creating...
+                                        {t('createPost.form.creating')}
                                     </>
                                 ) : (
-                                    'Create Post'
+                                    t('createPost.form.create')
                                 )}
                             </button>
                         </div>

@@ -10,16 +10,12 @@ interface PostCardProps {
     onDelete?: (postId: number) => void;
 }
 
-export const PostCard: React.FC<PostCardProps> = ({
-    post,
-    currentUser,
-    onDelete,
-}) => {
+export const PostCard: React.FC<PostCardProps> = ({ post, currentUser, onDelete }) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const canDelete = currentUser && onDelete && (currentUser.id === post.authorId || currentUser.role === UserRole.ADMIN);
 
-    const canDelete = currentUser &&
-        onDelete &&
-        (currentUser.id === post.authorId || currentUser.role == UserRole.ADMIN);
+    const displayCategories = post.categories.slice(0, 3);
+    const remainingCount = post.categories.length - 3;
 
     return (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-all duration-300 h-full flex flex-col">
@@ -47,6 +43,22 @@ export const PostCard: React.FC<PostCardProps> = ({
                     >
                         <Trash2 className="w-5 h-5" />
                     </button>
+                )}
+            </div>
+
+            <div className="flex flex-wrap gap-2 mb-3">
+                {displayCategories.map((category) => (
+                    <span
+                        key={category.id}
+                        className="px-2.5 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                    >
+                        {category.title}
+                    </span>
+                ))}
+                {remainingCount > 0 && (
+                    <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                        +{remainingCount}
+                    </span>
                 )}
             </div>
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 import { Category } from '../../models';
 import { Loader2, Plus, Pencil, Trash2, Tags } from 'lucide-react';
 import config from '../../config';
@@ -18,6 +19,7 @@ interface PaginationData {
 }
 
 export const CategoriesManagement = () => {
+    const { t } = useTranslation();
     const [categories, setCategories] = useState<Category[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -27,7 +29,6 @@ export const CategoriesManagement = () => {
         title: '',
         description: ''
     });
-
     const [pagination, setPagination] = useState<PaginationData>({
         currentPage: 1,
         totalPages: 1,
@@ -39,15 +40,12 @@ export const CategoriesManagement = () => {
         setIsLoading(true);
         try {
             const response = await axios.get(`${config.backendUrl}/categories/paginated`, {
-                params: {
-                    page,
-                    limit: pagination.itemsPerPage
-                }
+                params: { page, limit: pagination.itemsPerPage }
             });
             setCategories(response.data.categories);
             setPagination(response.data.pagination);
         } catch (error) {
-            setError('Failed to load categories');
+            setError(t('categories.errors.loadFailed'));
         } finally {
             setIsLoading(false);
         }
@@ -58,34 +56,27 @@ export const CategoriesManagement = () => {
             setIsLoading(true);
             try {
                 const response = await axios.get(`${config.backendUrl}/categories/paginated`, {
-                    params: {
-                        page: 1,
-                        limit: 9
-                    }
+                    params: { page: 1, limit: 9 }
                 });
                 setCategories(response.data.categories);
                 setPagination(response.data.pagination);
             } catch (error) {
-                setError('Failed to load categories');
+                setError(t('categories.errors.loadFailed'));
             } finally {
                 setIsLoading(false);
             }
         };
-
         fetchInitialData();
-    }, []);
+    }, [t]);
 
-    // Replace the second useEffect with this one
     useEffect(() => {
         if (pagination.currentPage !== undefined) {
             fetchCategories(pagination.currentPage);
         }
-    }, [pagination.currentPage]);
+    }, [pagination.currentPage, t]);
 
     const handlePageChange = (newPage: number) => {
-        console.log('handlePageChange');
         if (newPage >= 1 && newPage <= pagination.totalPages) {
-            console.log(newPage);
             setPagination(prev => ({ ...prev, currentPage: newPage }));
         }
     };
@@ -103,19 +94,19 @@ export const CategoriesManagement = () => {
             setEditingCategory(null);
             setFormData({ title: '', description: '' });
         } catch (error) {
-            setError('Failed to save category');
+            setError(t('categories.errors.saveFailed'));
         } finally {
             setIsSubmitting(false);
         }
     };
 
     const handleDelete = async (id: number) => {
-        if (!window.confirm('Are you sure you want to delete this category?')) return;
+        if (!window.confirm(t('categories.confirmDelete'))) return;
         try {
             await axios.delete(`${config.backendUrl}/admin/categories/${id}`);
             await fetchCategories(pagination.currentPage);
         } catch (error) {
-            setError('Failed to delete category');
+            setError(t('categories.errors.deleteFailed'));
         }
     };
 
@@ -132,7 +123,9 @@ export const CategoriesManagement = () => {
             <div className="flex justify-center items-center min-h-[400px]">
                 <div className="flex flex-col items-center gap-4">
                     <Loader2 className="w-12 h-12 animate-spin text-blue-600 dark:text-blue-400" />
-                    <p className="text-gray-600 dark:text-gray-400">Loading categories...</p>
+                    <p className="text-gray-600 dark:text-gray-400">
+                        {t('categories.loading')}
+                    </p>
                 </div>
             </div>
         );
@@ -140,29 +133,27 @@ export const CategoriesManagement = () => {
 
     return (
         <div className="max-w-7xl mx-auto space-y-8">
-            {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <Tags className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                        Categories Management
+                        {t('categories.title')}
                     </h2>
                 </div>
                 <span className="px-4 py-2 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium">
-                    {categories.length} Categories
+                    {t('categories.count', { count: categories.length })}
                 </span>
             </div>
 
-            {/* Form */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg ring-1 ring-gray-900/5 dark:ring-gray-700/50">
                 <div className="p-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                        {editingCategory ? 'Edit Category' : 'Create New Category'}
+                        {editingCategory ? t('categories.form.editTitle') : t('categories.form.createTitle')}
                     </h3>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Title
+                                {t('categories.form.titleLabel')}
                             </label>
                             <input
                                 type="text"
@@ -174,7 +165,7 @@ export const CategoriesManagement = () => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Description
+                                {t('categories.form.descriptionLabel')}
                             </label>
                             <textarea
                                 value={formData.description}
@@ -194,7 +185,7 @@ export const CategoriesManagement = () => {
                                     }}
                                     className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                                 >
-                                    Cancel
+                                    {t('common.cancel')}
                                 </button>
                             )}
                             <button
@@ -209,7 +200,7 @@ export const CategoriesManagement = () => {
                                 ) : (
                                     <Plus className="w-4 h-4" />
                                 )}
-                                {editingCategory ? 'Update Category' : 'Add Category'}
+                                {editingCategory ? t('categories.form.updateButton') : t('categories.form.addButton')}
                             </button>
                         </div>
                     </form>
@@ -222,7 +213,6 @@ export const CategoriesManagement = () => {
                 </div>
             )}
 
-            {/* Categories Grid */}
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {categories.map(category => (
                     <div
@@ -237,12 +227,14 @@ export const CategoriesManagement = () => {
                                 <button
                                     onClick={() => handleEdit(category)}
                                     className="p-2 text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                    aria-label={t('categories.actions.edit')}
                                 >
                                     <Pencil className="w-4 h-4" />
                                 </button>
                                 <button
                                     onClick={() => handleDelete(category.id)}
                                     className="p-2 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                    aria-label={t('categories.actions.delete')}
                                 >
                                     <Trash2 className="w-4 h-4" />
                                 </button>

@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
 import { Post, PostStatus } from '../../models';
 import { PostsFilterBar, Pagination, PostCard } from '..';
 import config from '../../config';
 
-// Types
 interface FilterState {
     status?: PostStatus;
     dateInterval?: {
@@ -24,7 +24,6 @@ interface PaginationState {
     itemsPerPage: number;
 }
 
-// Components
 const LoadingSkeleton = () => (
     <div className="grid gap-8 md:grid-cols-2">
         {[...Array(4)].map((_, i) => (
@@ -57,55 +56,69 @@ const LoadingSkeleton = () => (
     </div>
 );
 
-const ErrorMessage = ({ error, onRetry }: { error: string; onRetry: () => void }) => (
-    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl p-6 shadow-lg">
-        <div className="flex items-center space-x-3">
-            <div className="flex-shrink-0">
-                <svg className="h-6 w-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            </div>
-            <div className="flex-1">
-                <h3 className="text-lg font-medium text-red-800 dark:text-red-300">Error Loading Posts</h3>
-                <p className="mt-1 text-red-700 dark:text-red-400">{error}</p>
-            </div>
-            <button
-                onClick={onRetry}
-                className="flex-shrink-0 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
-            >
-                Try Again
-            </button>
-        </div>
-    </div>
-);
+const ErrorMessage = ({ error, onRetry }: { error: string; onRetry: () => void }) => {
+    const { t } = useTranslation();
 
-const EmptyState = ({ hasFilters }: { hasFilters: boolean }) => (
-    <div className="text-center py-16 px-4">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 max-w-lg mx-auto">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 mb-6">
-                <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                </svg>
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">No posts found</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-                {hasFilters ? 'Try selecting different categories or clearing the filters' : 'Get started by creating your first post'}
-            </p>
-            {!hasFilters && (
-                <Link
-                    to="/create-post"
-                    className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
+    return (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl p-6 shadow-lg">
+            <div className="flex items-center space-x-3">
+                <div className="flex-shrink-0">
+                    <svg className="h-6 w-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div className="flex-1">
+                    <h3 className="text-lg font-medium text-red-800 dark:text-red-300">
+                        {t('mainPage.error.title')}
+                    </h3>
+                    <p className="mt-1 text-red-700 dark:text-red-400">{error}</p>
+                </div>
+                <button
+                    onClick={onRetry}
+                    className="flex-shrink-0 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
                 >
-                    <Plus className="w-5 h-5 mr-2" />
-                    Create First Post
-                </Link>
-            )}
+                    {t('mainPage.error.tryAgain')}
+                </button>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
-// Custom hooks
-const useSearchQuery = (setFilters: React.Dispatch<React.SetStateAction<FilterState>>, setPagination: React.Dispatch<React.SetStateAction<PaginationState>>) => {
+const EmptyState = ({ hasFilters }: { hasFilters: boolean }) => {
+    const { t } = useTranslation();
+
+    return (
+        <div className="text-center py-16 px-4">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 max-w-lg mx-auto">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 mb-6">
+                    <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                    </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                    {t('mainPage.empty.title')}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                    {hasFilters ? t('mainPage.empty.withFilters') : t('mainPage.empty.noFilters')}
+                </p>
+                {!hasFilters && (
+                    <Link
+                        to="/create-post"
+                        className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
+                    >
+                        <Plus className="w-5 h-5 mr-2" />
+                        {t('mainPage.createFirstPost')}
+                    </Link>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const useSearchQuery = (
+    setFilters: React.Dispatch<React.SetStateAction<FilterState>>,
+    setPagination: React.Dispatch<React.SetStateAction<PaginationState>>
+) => {
     const location = useLocation();
 
     useEffect(() => {
@@ -118,9 +131,8 @@ const useSearchQuery = (setFilters: React.Dispatch<React.SetStateAction<FilterSt
     }, [location.search, setFilters, setPagination]);
 };
 
-
-// Main component
 export const MainPage = () => {
+    const { t } = useTranslation();
     const [posts, setPosts] = useState<Post[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -162,7 +174,7 @@ export const MainPage = () => {
             setPagination(response.data.pagination);
         } catch (err) {
             console.error('Error fetching posts:', err);
-            setError('Failed to load posts');
+            setError(t('mainPage.errors.loadFailed'));
         } finally {
             setIsLoading(false);
         }
@@ -170,7 +182,7 @@ export const MainPage = () => {
 
     useEffect(() => {
         fetchPosts(pagination.currentPage, sortBy, filters);
-    }, [pagination.currentPage, sortBy, filters]);
+    }, [pagination.currentPage, sortBy, filters, t]);
 
     const handleSortChange = (newSort: string) => {
         setSortBy(newSort);
@@ -200,10 +212,13 @@ export const MainPage = () => {
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 space-y-4 md:space-y-0">
                     <div className="flex flex-col">
                         <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
-                            Recent Posts
+                            {t('mainPage.title')}
                         </h1>
                         <p className="text-gray-600 dark:text-gray-400 mt-2">
-                            {pagination.totalItems} posts found {filters.categoryIds?.length ? ' in selected categories' : ''}
+                            {t('mainPage.postsFound', {
+                                count: pagination.totalItems,
+                                inCategories: filters.categoryIds?.length ? t('mainPage.inSelectedCategories') : ''
+                            })}
                         </p>
                     </div>
                     <Link
@@ -211,7 +226,7 @@ export const MainPage = () => {
                         className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900"
                     >
                         <Plus className="w-5 h-5 mr-2" />
-                        Create Post
+                        {t('mainPage.createPost')}
                     </Link>
                 </div>
 

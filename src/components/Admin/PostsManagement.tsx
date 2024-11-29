@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 import { Post, PostStatus, User } from '../../models';
 import { PostsFilterBar, Pagination, PostCard } from '..';
 import config from '../../config';
@@ -25,7 +26,10 @@ interface PostsManagementProps {
     currentUser: User | null;
 }
 
-export const PostsManagement: React.FC<PostsManagementProps> = ({ currentUser }) => {
+export const PostsManagement: React.FC<PostsManagementProps> = ({
+    currentUser
+}) => {
+    const { t } = useTranslation();
     const [posts, setPosts] = useState<Post[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -33,7 +37,7 @@ export const PostsManagement: React.FC<PostsManagementProps> = ({ currentUser })
         currentPage: 1,
         totalPages: 1,
         totalItems: 0,
-        itemsPerPage: 10,
+        itemsPerPage: 10
     });
     const [sortBy, setSortBy] = useState('publishDate');
     const [filters, setFilters] = useState<FilterState>({});
@@ -44,7 +48,7 @@ export const PostsManagement: React.FC<PostsManagementProps> = ({ currentUser })
             const params = new URLSearchParams({
                 page: page.toString(),
                 limit: pagination.itemsPerPage.toString(),
-                sort,
+                sort
             });
 
             if (currentFilters.dateInterval?.startDate) {
@@ -65,7 +69,7 @@ export const PostsManagement: React.FC<PostsManagementProps> = ({ currentUser })
             setPagination(response.data.pagination);
         } catch (err) {
             console.error('Error fetching posts:', err);
-            setError('Failed to load posts');
+            setError(t('postsManagement.errors.loadFailed'));
         } finally {
             setIsLoading(false);
         }
@@ -73,7 +77,7 @@ export const PostsManagement: React.FC<PostsManagementProps> = ({ currentUser })
 
     useEffect(() => {
         fetchPosts(pagination.currentPage, sortBy, filters);
-    }, [pagination.currentPage, sortBy, filters]);
+    }, [pagination.currentPage, sortBy, filters, t]);
 
     const handleSortChange = (newSort: string) => {
         setSortBy(newSort);
@@ -101,6 +105,7 @@ export const PostsManagement: React.FC<PostsManagementProps> = ({ currentUser })
         try {
             await axios.delete(`${config.backendUrl}/posts/${postId}`);
             await fetchPosts(pagination.currentPage, sortBy, filters);
+
             const newTotalPages = Math.ceil((pagination.totalItems - 1) / pagination.itemsPerPage);
             if (pagination.currentPage > newTotalPages && newTotalPages > 0) {
                 await fetchPosts(newTotalPages, sortBy, filters);
@@ -108,9 +113,9 @@ export const PostsManagement: React.FC<PostsManagementProps> = ({ currentUser })
             setError(null);
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                setError(error.response?.data?.error || 'Failed to delete post');
+                setError(error.response?.data?.error || t('postsManagement.errors.deleteFailed'));
             } else {
-                setError('Failed to delete post');
+                setError(t('postsManagement.errors.deleteFailed'));
             }
         }
     };
@@ -131,7 +136,7 @@ export const PostsManagement: React.FC<PostsManagementProps> = ({ currentUser })
                     onClick={() => fetchPosts(pagination.currentPage, sortBy, filters)}
                     className="ml-4 text-sm underline"
                 >
-                    Retry
+                    {t('common.retry')}
                 </button>
             </div>
         );
@@ -141,9 +146,10 @@ export const PostsManagement: React.FC<PostsManagementProps> = ({ currentUser })
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                    Posts Management ({pagination.totalItems} total)
+                    {t('postsManagement.title')} ({t('postsManagement.totalCount', { count: pagination.totalItems })})
                 </h2>
             </div>
+
             <PostsFilterBar
                 onSortChange={handleSortChange}
                 onFilterChange={handleFilterChange}
@@ -151,6 +157,7 @@ export const PostsManagement: React.FC<PostsManagementProps> = ({ currentUser })
                 currentSort={sortBy}
                 filters={filters}
             />
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {posts.map(post => (
                     <PostCard
@@ -161,6 +168,7 @@ export const PostsManagement: React.FC<PostsManagementProps> = ({ currentUser })
                     />
                 ))}
             </div>
+
             {posts.length > 0 && (
                 <Pagination
                     currentPage={pagination.currentPage}
