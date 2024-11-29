@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 import config from '../../config';
 import { Loader2, MessageSquare } from 'lucide-react';
 import { CommentFilterBar, DeleteModal, Pagination } from '..';
@@ -26,6 +27,7 @@ interface FilterState {
 }
 
 export const UserComments: React.FC<UserCommentsProps> = ({ user }) => {
+    const { t } = useTranslation();
     const [comments, setComments] = useState<Comment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -63,7 +65,7 @@ export const UserComments: React.FC<UserCommentsProps> = ({ user }) => {
             setComments(response.data.comments);
             setPagination(response.data.pagination);
         } catch (error) {
-            setError('Failed to load comments');
+            setError(t('userComments.errors.loadFailed'));
         } finally {
             setIsLoading(false);
         }
@@ -101,6 +103,7 @@ export const UserComments: React.FC<UserCommentsProps> = ({ user }) => {
         try {
             await axios.delete(`${config.backendUrl}/comments/${commentToDelete}`);
             await fetchComments(pagination.currentPage, sortBy, filters);
+
             const newTotalPages = Math.ceil((pagination.totalItems - 1) / pagination.itemsPerPage);
             if (pagination.currentPage > newTotalPages && newTotalPages > 0) {
                 await fetchComments(newTotalPages, sortBy, filters);
@@ -108,9 +111,9 @@ export const UserComments: React.FC<UserCommentsProps> = ({ user }) => {
             setError(null);
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                setError(error.response?.data?.error || 'Failed to delete comment');
+                setError(error.response?.data?.error || t('userComments.errors.deleteFailed'));
             } else {
-                setError('Failed to delete comment');
+                setError(t('userComments.errors.deleteFailed'));
             }
         } finally {
             setIsDeletingComment(false);
@@ -125,10 +128,10 @@ export const UserComments: React.FC<UserCommentsProps> = ({ user }) => {
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <MessageSquare className="w-6 h-6" />
-                    My Comments
+                    {t('userComments.title')}
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-2">
-                    Showing your comments across all posts
+                    {t('userComments.subtitle')}
                 </p>
             </div>
 
@@ -160,15 +163,13 @@ export const UserComments: React.FC<UserCommentsProps> = ({ user }) => {
                             />
                         ))}
                     </div>
-
                     {comments.length === 0 && (
                         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                             {Object.keys(filters).length > 0
-                                ? 'No comments found with the selected filters'
-                                : "You haven't made any comments yet"}
+                                ? t('userComments.noCommentsWithFilters')
+                                : t('userComments.noComments')}
                         </div>
                     )}
-
                     {comments.length > 0 && (
                         <Pagination
                             currentPage={pagination.currentPage}
@@ -185,10 +186,10 @@ export const UserComments: React.FC<UserCommentsProps> = ({ user }) => {
                 onClose={() => setCommentToDelete(null)}
                 onConfirm={handleDeleteComment}
                 isDeleting={isDeletingComment}
-                title="Delete Comment"
-                description="Are you sure you want to delete this comment? This action cannot be undone. All replies and reactions to this comment will also be deleted."
-                confirmButtonText="Delete Comment"
-                cancelButtonText="Cancel"
+                title={t('userComments.deleteModal.title')}
+                description={t('userComments.deleteModal.description')}
+                confirmButtonText={t('userComments.deleteModal.confirmButton')}
+                cancelButtonText={t('userComments.deleteModal.cancelButton')}
             />
         </div>
     );

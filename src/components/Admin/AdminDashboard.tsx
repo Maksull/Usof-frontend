@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { User, UserRole } from '../../models';
-import { CategoriesManagement, CommentsManagement, PostsManagement } from '..';
+import { CategoriesManagement, CommentsManagement, PostsManagement, } from '..';
 
 interface AdminDashboardProps {
     currentUser: User | null;
@@ -10,16 +11,17 @@ interface AdminDashboardProps {
 type ActiveTab = 'posts' | 'comments' | 'categories';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) => {
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<ActiveTab>('posts');
 
-    if (currentUser?.role != UserRole.ADMIN) {
+    if (currentUser?.role !== UserRole.ADMIN) {
         return <Navigate to="/" replace />;
     }
 
     const tabs: { id: ActiveTab; label: string }[] = [
-        { id: 'posts', label: 'Posts' },
-        { id: 'comments', label: 'Comments' },
-        { id: 'categories', label: 'Categories' }
+        { id: 'posts', label: t('admin.tabs.posts') },
+        { id: 'comments', label: t('admin.tabs.comments') },
+        { id: 'categories', label: t('admin.tabs.categories') }
     ];
 
     const renderContent = () => {
@@ -37,7 +39,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         <div className="container mx-auto px-4 py-6">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
                 <div className="border-b border-gray-200 dark:border-gray-700">
-                    <nav className="flex space-x-2 px-4" aria-label="Tabs">
+                    <nav
+                        className="flex space-x-2 px-4"
+                        aria-label={t('admin.accessibility.tabsNavigation')}
+                    >
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}
@@ -49,6 +54,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                         : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                                     }
                 `}
+                                aria-current={activeTab === tab.id ? 'page' : undefined}
+                                aria-label={t('admin.accessibility.selectTab', { tab: tab.label })}
                             >
                                 {tab.label}
                             </button>

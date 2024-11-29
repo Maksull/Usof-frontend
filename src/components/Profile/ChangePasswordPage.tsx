@@ -4,16 +4,8 @@ import axios from 'axios';
 import { AuthService } from '../../services';
 import { NotificationModal } from '..';
 import config from '../../config';
-import {
-    Lock,
-    ChevronLeft,
-    Loader2,
-    Eye,
-    EyeOff,
-    KeyRound,
-    Save,
-    X
-} from 'lucide-react';
+import { Lock, ChevronLeft, Loader2, Eye, EyeOff, KeyRound, Save, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 type ModalStatus = 'success' | 'error';
 
@@ -35,40 +27,46 @@ const PasswordInput: React.FC<PasswordInputProps> = ({
     placeholder,
     label,
     name
-}) => (
-    <div>
-        <label htmlFor={name} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {label}
-        </label>
-        <div className="relative">
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-5 w-5" />
-            <input
-                id={name}
-                name={name}
-                type={show ? "text" : "password"}
-                value={value}
-                onChange={onChange}
-                placeholder={placeholder}
-                className="w-full pl-10 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm 
-                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-                         bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200"
-                required
-                autoComplete={name}
-            />
-            <button
-                type="button"
-                onClick={onToggleShow}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 
-                         text-gray-400 hover:text-gray-600 dark:text-gray-500 
-                         dark:hover:text-gray-300 transition-colors"
+}) => {
+    const { t } = useTranslation();
+
+    return (
+        <div>
+            <label
+                htmlFor={name}
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
             >
-                {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-            </button>
+                {label}
+            </label>
+            <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-5 w-5" />
+                <input
+                    id={name}
+                    name={name}
+                    type={show ? "text" : "password"}
+                    value={value}
+                    onChange={onChange}
+                    placeholder={placeholder}
+                    className="w-full pl-10 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200"
+                    required
+                    autoComplete={name}
+                    aria-label={label}
+                />
+                <button
+                    type="button"
+                    onClick={onToggleShow}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                    aria-label={show ? t('password.hidePassword') : t('password.showPassword')}
+                >
+                    {show ? <EyeOff className="h-5 w-5" /> : <Eye />}
+                </button>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 export const ChangePasswordPage: React.FC = () => {
+    const { t } = useTranslation();
     const [formData, setFormData] = useState({
         oldPassword: '',
         newPassword: '',
@@ -90,30 +88,24 @@ export const ChangePasswordPage: React.FC = () => {
 
     const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const togglePasswordVisibility = (field: keyof typeof showPasswords) => {
-        setShowPasswords(prev => ({
-            ...prev,
-            [field]: !prev[field]
-        }));
+        setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
 
-        // Validation
         if (formData.newPassword !== formData.confirmPassword) {
-            setError('New passwords do not match');
+            setError(t('changePassword.errors.passwordMismatch'));
             return;
         }
+
         if (formData.newPassword.length < 6) {
-            setError('New password must be at least 6 characters long');
+            setError(t('changePassword.errors.passwordTooShort'));
             return;
         }
 
@@ -127,16 +119,17 @@ export const ChangePasswordPage: React.FC = () => {
             });
 
             setModalStatus('success');
-            setModalMessage('Password successfully changed! Redirecting to login...');
+            setModalMessage(t('changePassword.successMessage'));
             setIsModalOpen(true);
 
             await AuthService.logout();
-            setTimeout(() => { navigate('/login') }, 3000);
+            setTimeout(() => {
+                navigate('/login');
+            }, 3000);
         } catch (error) {
             const errorMessage = axios.isAxiosError(error)
-                ? error.response?.data?.error || 'Failed to change password'
-                : 'Failed to change password';
-
+                ? error.response?.data?.error || t('changePassword.errors.generic')
+                : t('changePassword.errors.generic');
             setError(errorMessage);
             setModalStatus('error');
             setModalMessage(errorMessage);
@@ -151,11 +144,10 @@ export const ChangePasswordPage: React.FC = () => {
             <div className="max-w-md mx-auto">
                 <Link
                     to={`/`}
-                    className="mb-6 flex items-center text-gray-600 dark:text-gray-400 
-                             hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                    className="mb-6 flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 >
                     <ChevronLeft className="w-5 h-5 mr-1" />
-                    Back to Home
+                    {t('common.backToHome')}
                 </Link>
 
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden transition-all duration-300">
@@ -165,13 +157,12 @@ export const ChangePasswordPage: React.FC = () => {
                                 <KeyRound className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                             </div>
                             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                                Change Password
+                                {t('changePassword.title')}
                             </h2>
                         </div>
 
                         {error && (
-                            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 
-                                          dark:border-red-800/50 rounded-lg text-red-600 dark:text-red-400 text-sm">
+                            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-lg text-red-600 dark:text-red-400 text-sm">
                                 {error}
                             </div>
                         )}
@@ -183,8 +174,8 @@ export const ChangePasswordPage: React.FC = () => {
                                 onChange={handleInputChange}
                                 show={showPasswords.oldPassword}
                                 onToggleShow={() => togglePasswordVisibility('oldPassword')}
-                                placeholder="Enter current password"
-                                label="Current Password"
+                                placeholder={t('changePassword.currentPasswordPlaceholder')}
+                                label={t('changePassword.currentPasswordLabel')}
                             />
 
                             <PasswordInput
@@ -193,8 +184,8 @@ export const ChangePasswordPage: React.FC = () => {
                                 onChange={handleInputChange}
                                 show={showPasswords.newPassword}
                                 onToggleShow={() => togglePasswordVisibility('newPassword')}
-                                placeholder="Enter new password"
-                                label="New Password"
+                                placeholder={t('changePassword.newPasswordPlaceholder')}
+                                label={t('changePassword.newPasswordLabel')}
                             />
 
                             <PasswordInput
@@ -203,39 +194,32 @@ export const ChangePasswordPage: React.FC = () => {
                                 onChange={handleInputChange}
                                 show={showPasswords.confirmPassword}
                                 onToggleShow={() => togglePasswordVisibility('confirmPassword')}
-                                placeholder="Confirm new password"
-                                label="Confirm New Password"
+                                placeholder={t('changePassword.confirmPasswordPlaceholder')}
+                                label={t('changePassword.confirmPasswordLabel')}
                             />
 
                             <div className="flex items-center justify-end space-x-4 pt-2">
                                 <Link
                                     to={`/`}
-                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 
-                                             hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 
-                                             dark:hover:bg-gray-600 rounded-lg transition-colors 
-                                             flex items-center space-x-2"
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg transition-colors flex items-center space-x-2"
                                 >
                                     <X className="w-4 h-4" />
-                                    <span>Cancel</span>
+                                    <span>{t('common.cancel')}</span>
                                 </Link>
-
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 
-                                             hover:bg-blue-700 rounded-lg transition-colors flex 
-                                             items-center space-x-2 disabled:opacity-50 
-                                             disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+                                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
                                 >
                                     {loading ? (
                                         <>
                                             <Loader2 className="w-4 h-4 animate-spin" />
-                                            <span>Changing Password...</span>
+                                            <span>{t('changePassword.changingPassword')}</span>
                                         </>
                                     ) : (
                                         <>
                                             <Save className="w-4 h-4" />
-                                            <span>Change Password</span>
+                                            <span>{t('changePassword.submitButton')}</span>
                                         </>
                                     )}
                                 </button>

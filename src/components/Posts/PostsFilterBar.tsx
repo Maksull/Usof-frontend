@@ -3,6 +3,7 @@ import { SortAsc, Calendar, Tags, RefreshCw, Search, ChevronDown } from 'lucide-
 import axios from 'axios';
 import config from '../../config';
 import { Category, PostStatus } from '../../models';
+import { useTranslation } from 'react-i18next';
 
 interface FilterState {
     status?: PostStatus;
@@ -36,14 +37,14 @@ interface FilterBarProps {
 }
 
 const SORT_OPTIONS: SortOption[] = [
-    { label: 'Latest', value: 'publishDate_DESC' },
-    { label: 'Oldest', value: 'publishDate_ASC' },
-    { label: 'Most Liked', value: 'likesCount_DESC' },
-    { label: 'Least Liked', value: 'likesCount_ASC' },
-    { label: 'Most Commented', value: 'commentsCount_DESC' },
-    { label: 'Least Commented', value: 'commentsCount_ASC' },
-    { label: 'Title A-Z', value: 'title_ASC' },
-    { label: 'Title Z-A', value: 'title_DESC' },
+    { label: 'posts.sort.latest', value: 'publishDate_DESC' },
+    { label: 'posts.sort.oldest', value: 'publishDate_ASC' },
+    { label: 'posts.sort.mostLiked', value: 'likesCount_DESC' },
+    { label: 'posts.sort.leastLiked', value: 'likesCount_ASC' },
+    { label: 'posts.sort.mostCommented', value: 'commentsCount_DESC' },
+    { label: 'posts.sort.leastCommented', value: 'commentsCount_ASC' },
+    { label: 'posts.sort.titleAZ', value: 'title_ASC' },
+    { label: 'posts.sort.titleZA', value: 'title_DESC' }
 ];
 
 export const PostsFilterBar: React.FC<FilterBarProps> = ({
@@ -51,8 +52,11 @@ export const PostsFilterBar: React.FC<FilterBarProps> = ({
     onFilterChange,
     onResetAll,
     currentSort,
-    filters,
+    filters
 }) => {
+    const { t } = useTranslation();
+
+    // State management
     const [categories, setCategories] = useState<Category[]>([]);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasNextPage, setHasNextPage] = useState(true);
@@ -60,14 +64,30 @@ export const PostsFilterBar: React.FC<FilterBarProps> = ({
     const [searchValue, setSearchValue] = useState(filters.searchQuery || '');
     const [isInitialLoad, setIsInitialLoad] = useState(true);
     const [isCategoriesVisible, setIsCategoriesVisible] = useState(true);
+    const [isDatePickerVisible, setIsDatePickerVisible] = useState(true);
 
+    // Debounced search effect
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            if (searchValue !== filters.searchQuery) {
+                onFilterChange({ searchQuery: searchValue });
+            }
+        }, 300);
 
+        return () => clearTimeout(timeoutId);
+    }, [searchValue, onFilterChange, filters.searchQuery]);
+
+    // Initial categories fetch
+    useEffect(() => {
+        fetchCategories();
+    }, []);
 
     const fetchCategories = async (cursor?: string) => {
         try {
             setIsLoadingMore(true);
             const params = new URLSearchParams();
-            params.append('limit', '10'); // Changed to 10 for load more button
+            params.append('limit', '10');
+
             if (cursor) {
                 params.append('cursor', cursor);
             }
@@ -95,14 +115,8 @@ export const PostsFilterBar: React.FC<FilterBarProps> = ({
         }
     };
 
-    useEffect(() => {
-        fetchCategories();
-    }, []);
-
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newValue = e.target.value;
-        setSearchValue(newValue);
-        onFilterChange({ searchQuery: newValue });
+        setSearchValue(e.target.value);
     };
 
     const handleLoadMore = () => {
@@ -111,22 +125,29 @@ export const PostsFilterBar: React.FC<FilterBarProps> = ({
         }
     };
 
+    const handleDateChange = (startOrEnd: 'startDate' | 'endDate', value: string) => {
+        onFilterChange({
+            dateInterval: {
+                startDate: startOrEnd === 'startDate' ? value : filters.dateInterval?.startDate || '',
+                endDate: startOrEnd === 'endDate' ? value : filters.dateInterval?.endDate || ''
+            }
+        });
+    };
+
+    const handleCategoryToggle = (categoryId: number) => {
+        const currentCategories = filters.categoryIds || [];
+        const newCategories = currentCategories.includes(categoryId)
+            ? currentCategories.filter(id => id !== categoryId)
+            : [...currentCategories, categoryId];
+        onFilterChange({ categoryIds: newCategories });
+    };
+
     const hasActiveFilters = Boolean(
         filters.dateInterval?.startDate ||
         filters.dateInterval?.endDate ||
         (filters.categoryIds && filters.categoryIds.length > 0) ||
         filters.searchQuery
     );
-
-    const toggleCategories = () => {
-        setIsCategoriesVisible(!isCategoriesVisible);
-    };
-
-    const [isDatePickerVisible, setIsDatePickerVisible] = useState(true);
-
-    const toggleDates = () => {
-        setIsDatePickerVisible(!isDatePickerVisible);
-    };
 
     return (
         <div className="mb-8 space-y-6 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transition-all duration-300">
@@ -138,22 +159,25 @@ export const PostsFilterBar: React.FC<FilterBarProps> = ({
                         value={currentSort}
                         onChange={(e) => onSortChange(e.target.value)}
                         className="px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 w-full sm:w-auto"
+                        aria-label={t('posts.sort.label')}
                     >
                         {SORT_OPTIONS.map(option => (
                             <option key={option.value} value={option.value}>
-                                {option.label}
+                                {t(option.label)}
                             </option>
                         ))}
                     </select>
                 </div>
+
                 <div className="relative w-full sm:w-64">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                     <input
                         type="text"
                         value={searchValue}
                         onChange={handleSearchChange}
-                        placeholder="Search posts..."
+                        placeholder={t('posts.search.placeholder')}
                         className="pl-10 pr-4 py-2.5 w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                        aria-label={t('posts.search.label')}
                     />
                 </div>
             </div>
@@ -161,16 +185,18 @@ export const PostsFilterBar: React.FC<FilterBarProps> = ({
             {/* Date Filter Section */}
             <div className="space-y-2">
                 <button
-                    onClick={toggleDates}
+                    onClick={() => setIsDatePickerVisible(!isDatePickerVisible)}
                     className="flex items-center gap-2 w-full justify-between py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
+                    aria-expanded={isDatePickerVisible}
                 >
                     <div className="flex items-center gap-2">
                         <Calendar className="h-5 w-5 text-gray-400" />
                         <h3 className="text-sm font-medium">
-                            Date Range
+                            {t('posts.dateRange.title')}
                             {filters.dateInterval?.startDate && filters.dateInterval?.endDate && (
                                 <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
-                                    {new Date(filters.dateInterval.startDate).toLocaleDateString()} - {new Date(filters.dateInterval.endDate).toLocaleDateString()}
+                                    {new Date(filters.dateInterval.startDate).toLocaleDateString()} -
+                                    {new Date(filters.dateInterval.endDate).toLocaleDateString()}
                                 </span>
                             )}
                         </h3>
@@ -182,9 +208,7 @@ export const PostsFilterBar: React.FC<FilterBarProps> = ({
                 </button>
 
                 <div
-                    className={`transition-all duration-200 ${isDatePickerVisible
-                        ? 'opacity-100 max-h-[200px]'
-                        : 'opacity-0 max-h-0 overflow-hidden'
+                    className={`transition-all duration-200 ${isDatePickerVisible ? 'opacity-100 max-h-[200px]' : 'opacity-0 max-h-0 overflow-hidden'
                         }`}
                 >
                     <div className="flex flex-col sm:flex-row gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700">
@@ -193,31 +217,22 @@ export const PostsFilterBar: React.FC<FilterBarProps> = ({
                                 htmlFor="start-date"
                                 className="block text-xs font-medium text-gray-600 dark:text-gray-400"
                             >
-                                Start Date
+                                {t('posts.dateRange.startDate')}
                             </label>
-                            <div className="relative">
-                                <input
-                                    id="start-date"
-                                    type="date"
-                                    value={filters.dateInterval?.startDate || ''}
-                                    onChange={(e) =>
-                                        onFilterChange({
-                                            dateInterval: {
-                                                startDate: e.target.value,
-                                                endDate: filters.dateInterval?.endDate || '',
-                                            },
-                                        })
-                                    }
-                                    max={filters.dateInterval?.endDate}
-                                    className="w-full pl-3 pr-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder-gray-400 dark:placeholder-gray-500"
-                                />
-                            </div>
+                            <input
+                                id="start-date"
+                                type="date"
+                                value={filters.dateInterval?.startDate || ''}
+                                onChange={(e) => handleDateChange('startDate', e.target.value)}
+                                max={filters.dateInterval?.endDate}
+                                className="w-full pl-3 pr-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                            />
                         </div>
 
                         <div className="flex items-center">
                             <div className="hidden sm:block w-8 h-[1px] bg-gray-300 dark:bg-gray-600" />
                             <span className="block sm:hidden text-xs font-medium text-gray-500 dark:text-gray-400">
-                                to
+                                {t('posts.dateRange.to')}
                             </span>
                         </div>
 
@@ -226,35 +241,26 @@ export const PostsFilterBar: React.FC<FilterBarProps> = ({
                                 htmlFor="end-date"
                                 className="block text-xs font-medium text-gray-600 dark:text-gray-400"
                             >
-                                End Date
+                                {t('posts.dateRange.endDate')}
                             </label>
-                            <div className="relative">
-                                <input
-                                    id="end-date"
-                                    type="date"
-                                    value={filters.dateInterval?.endDate || ''}
-                                    onChange={(e) =>
-                                        onFilterChange({
-                                            dateInterval: {
-                                                startDate: filters.dateInterval?.startDate || '',
-                                                endDate: e.target.value,
-                                            },
-                                        })
-                                    }
-                                    min={filters.dateInterval?.startDate}
-                                    className="w-full pl-3 pr-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 placeholder-gray-400 dark:placeholder-gray-500"
-                                />
-                            </div>
+                            <input
+                                id="end-date"
+                                type="date"
+                                value={filters.dateInterval?.endDate || ''}
+                                onChange={(e) => handleDateChange('endDate', e.target.value)}
+                                min={filters.dateInterval?.startDate}
+                                className="w-full pl-3 pr-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                            />
                         </div>
 
-                        {filters.dateInterval?.startDate || filters.dateInterval?.endDate ? (
+                        {(filters.dateInterval?.startDate || filters.dateInterval?.endDate) && (
                             <button
                                 onClick={() => onFilterChange({ dateInterval: undefined })}
                                 className="self-end sm:self-center px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors duration-200"
                             >
-                                Clear
+                                {t('posts.dateRange.clear')}
                             </button>
-                        ) : null}
+                        )}
                     </div>
                 </div>
             </div>
@@ -262,13 +268,17 @@ export const PostsFilterBar: React.FC<FilterBarProps> = ({
             {/* Categories Section */}
             <div className="space-y-4">
                 <button
-                    onClick={toggleCategories}
+                    onClick={() => setIsCategoriesVisible(!isCategoriesVisible)}
                     className="flex items-center gap-2 w-full justify-between py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
+                    aria-expanded={isCategoriesVisible}
                 >
                     <div className="flex items-center gap-2">
                         <Tags className="h-5 w-5 text-gray-400" />
                         <h3 className="text-sm font-medium">
-                            Categories {filters.categoryIds?.length ? `(${filters.categoryIds.length} selected)` : ''}
+                            {t('posts.categories.title')}
+                            {filters.categoryIds?.length
+                                ? t('posts.categories.selected', { count: filters.categoryIds.length })
+                                : ''}
                         </h3>
                     </div>
                     <ChevronDown
@@ -278,9 +288,7 @@ export const PostsFilterBar: React.FC<FilterBarProps> = ({
                 </button>
 
                 <div
-                    className={`space-y-4 transition-all duration-200 ${isCategoriesVisible
-                        ? 'opacity-100 max-h-[1000px]'
-                        : 'opacity-0 max-h-0 overflow-hidden'
+                    className={`space-y-4 transition-all duration-200 ${isCategoriesVisible ? 'opacity-100 max-h-[1000px]' : 'opacity-0 max-h-0 overflow-hidden'
                         }`}
                 >
                     {isInitialLoad ? (
@@ -293,13 +301,7 @@ export const PostsFilterBar: React.FC<FilterBarProps> = ({
                                 {categories.map(category => (
                                     <button
                                         key={category.id}
-                                        onClick={() => {
-                                            const currentCategories = filters.categoryIds || [];
-                                            const newCategories = currentCategories.includes(category.id)
-                                                ? currentCategories.filter(id => id !== category.id)
-                                                : [...currentCategories, category.id];
-                                            onFilterChange({ categoryIds: newCategories });
-                                        }}
+                                        onClick={() => handleCategoryToggle(category.id)}
                                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${filters.categoryIds?.includes(category.id)
                                             ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 ring-2 ring-blue-500'
                                             : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -317,7 +319,9 @@ export const PostsFilterBar: React.FC<FilterBarProps> = ({
                                         disabled={isLoadingMore}
                                         className="px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        {isLoadingMore ? 'Loading...' : 'Load More Categories'}
+                                        {isLoadingMore
+                                            ? t('posts.categories.loading')
+                                            : t('posts.categories.loadMore')}
                                     </button>
                                 </div>
                             )}
@@ -326,7 +330,7 @@ export const PostsFilterBar: React.FC<FilterBarProps> = ({
                 </div>
             </div>
 
-            {/* Reset Filters Section */}
+            {/* Reset Filters Button */}
             {hasActiveFilters && (
                 <div className="flex justify-end gap-2">
                     <button
@@ -334,7 +338,7 @@ export const PostsFilterBar: React.FC<FilterBarProps> = ({
                         className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200"
                     >
                         <RefreshCw className="w-4 h-4 mr-2" />
-                        Reset All Filters
+                        {t('posts.filters.resetAll')}
                     </button>
                 </div>
             )}

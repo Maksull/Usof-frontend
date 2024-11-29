@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Trash2, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Comment, LikeType, User, UserRole } from '../../models';
+import { useTranslation } from 'react-i18next';
 
 interface CommentCardProps {
     comment: Comment;
@@ -12,8 +13,9 @@ interface CommentCardProps {
 export const CommentCard: React.FC<CommentCardProps> = ({
     comment,
     currentUser,
-    onDeleteClick,
+    onDeleteClick
 }) => {
+    const { t } = useTranslation();
     const canDelete = currentUser && (
         currentUser.id === comment.author.id ||
         currentUser.role == UserRole.ADMIN
@@ -25,18 +27,23 @@ export const CommentCard: React.FC<CommentCardProps> = ({
                 <Link
                     to={`/post/${comment.postId}`}
                     className="text-blue-600 dark:text-blue-400 hover:underline font-medium line-clamp-1"
+                    aria-label={t('commentCard.viewPost', { title: comment.post.title })}
                 >
                     {comment.post.title}
                 </Link>
                 <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                        {new Date(comment.publishDate).toLocaleDateString()}
+                        {new Date(comment.publishDate).toLocaleDateString(undefined, {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        })}
                     </span>
                     {canDelete && (
                         <button
                             onClick={() => onDeleteClick(comment.id)}
                             className="p-1.5 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                            aria-label="Delete comment"
+                            aria-label={t('commentCard.deleteComment')}
                         >
                             <Trash2 className="w-4 h-4" />
                         </button>
@@ -47,7 +54,7 @@ export const CommentCard: React.FC<CommentCardProps> = ({
             {comment.replyTo && (
                 <div className="mb-4 pl-4 border-l-2 border-gray-200 dark:border-gray-700">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Replying to @{comment.replyTo.author.login}
+                        {t('commentCard.replyingTo', { username: comment.replyTo.author.login })}
                     </p>
                 </div>
             )}
@@ -60,13 +67,17 @@ export const CommentCard: React.FC<CommentCardProps> = ({
                 <div className="flex items-center gap-2">
                     <ThumbsUp className="w-4 h-4 text-emerald-500" />
                     <span className="text-sm text-gray-600 dark:text-gray-300">
-                        {comment.likes.filter(like => like.type === LikeType.LIKE).length}
+                        {t('commentCard.likes', {
+                            count: comment.likes.filter(like => like.type === LikeType.LIKE).length
+                        })}
                     </span>
                 </div>
                 <div className="flex items-center gap-2">
                     <ThumbsDown className="w-4 h-4 text-red-500" />
                     <span className="text-sm text-gray-600 dark:text-gray-300">
-                        {comment.likes.filter(like => like.type === LikeType.DISLIKE).length}
+                        {t('commentCard.dislikes', {
+                            count: comment.likes.filter(like => like.type === LikeType.DISLIKE).length
+                        })}
                     </span>
                 </div>
             </div>

@@ -1,5 +1,11 @@
 import React from 'react';
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import {
+    ChevronLeft,
+    ChevronRight,
+    ChevronsLeft,
+    ChevronsRight
+} from 'lucide-react';
 
 interface PaginationProps {
     currentPage: number;
@@ -13,6 +19,8 @@ export const Pagination: React.FC<PaginationProps> = ({
     totalPages,
     onPageChange
 }) => {
+    const { t } = useTranslation();
+
     if (totalPages <= 1) return null;
 
     const getPageNumbers = () => {
@@ -24,14 +32,12 @@ export const Pagination: React.FC<PaginationProps> = ({
         }
 
         pages.push(1);
-
         let start = Math.max(2, currentPage - 1);
         let end = Math.min(totalPages - 1, currentPage + 1);
 
         if (currentPage <= 3) {
             end = 4;
         }
-
         if (currentPage >= totalPages - 2) {
             start = totalPages - 3;
         }
@@ -47,7 +53,6 @@ export const Pagination: React.FC<PaginationProps> = ({
         if (end < totalPages - 1) {
             pages.push('...');
         }
-
         pages.push(totalPages);
 
         return pages;
@@ -79,7 +84,8 @@ export const Pagination: React.FC<PaginationProps> = ({
     ${buttonBaseClasses}
     ${isActive
             ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 font-medium'
-            : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'}
+            : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'
+        }
     focus:ring-blue-500 dark:focus:ring-blue-400
     focus:ring-offset-white dark:focus:ring-offset-gray-900
   `;
@@ -87,27 +93,24 @@ export const Pagination: React.FC<PaginationProps> = ({
     return (
         <div className="flex justify-center mt-8">
             <div className="inline-flex items-center gap-2 p-1 bg-white dark:bg-gray-800 rounded-2xl shadow-lg dark:shadow-gray-900/30">
-                {/* First page */}
                 <button
                     onClick={() => onPageChange(1)}
                     disabled={currentPage === 1}
                     className={`${navigationButtonClasses} hidden sm:flex`}
-                    aria-label="First page"
+                    aria-label={t('pagination.firstPage')}
                 >
                     <ChevronsLeft className="w-5 h-5" />
                 </button>
 
-                {/* Previous page */}
                 <button
                     onClick={() => onPageChange(currentPage - 1)}
                     disabled={currentPage === 1}
                     className={navigationButtonClasses}
-                    aria-label="Previous page"
+                    aria-label={t('pagination.previousPage')}
                 >
                     <ChevronLeft className="w-5 h-5" />
                 </button>
 
-                {/* Page numbers */}
                 <div className="flex items-center gap-2 px-2">
                     {pageNumbers.map((page, index) => (
                         typeof page === 'number' ? (
@@ -116,6 +119,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                                 onClick={() => onPageChange(page)}
                                 className={pageButtonClasses(currentPage === page)}
                                 aria-current={currentPage === page ? 'page' : undefined}
+                                aria-label={t('pagination.pageNumber', { page })}
                             >
                                 {page}
                             </button>
@@ -123,6 +127,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                             <span
                                 key={index}
                                 className="flex items-center justify-center h-10 w-8 text-gray-400 dark:text-gray-500"
+                                aria-hidden="true"
                             >
                                 {page}
                             </span>
@@ -130,22 +135,20 @@ export const Pagination: React.FC<PaginationProps> = ({
                     ))}
                 </div>
 
-                {/* Next page */}
                 <button
                     onClick={() => onPageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
                     className={navigationButtonClasses}
-                    aria-label="Next page"
+                    aria-label={t('pagination.nextPage')}
                 >
                     <ChevronRight className="w-5 h-5" />
                 </button>
 
-                {/* Last page */}
                 <button
                     onClick={() => onPageChange(totalPages)}
                     disabled={currentPage === totalPages}
                     className={`${navigationButtonClasses} hidden sm:flex`}
-                    aria-label="Last page"
+                    aria-label={t('pagination.lastPage')}
                 >
                     <ChevronsRight className="w-5 h-5" />
                 </button>
