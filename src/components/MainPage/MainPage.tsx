@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
-import { Post, PostStatus } from '../../models';
+import { Post, PostStatus, User } from '../../models';
 import { PostsFilterBar, Pagination, PostCard } from '..';
 import config from '../../config';
 
@@ -23,6 +23,7 @@ interface PaginationState {
     totalItems: number;
     itemsPerPage: number;
 }
+
 
 const LoadingSkeleton = () => (
     <div className="grid gap-8 md:grid-cols-2">
@@ -120,34 +121,52 @@ const useSearchQuery = (
     setPagination: React.Dispatch<React.SetStateAction<PaginationState>>
 ) => {
     const location = useLocation();
-
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const searchQuery = params.get('searchQuery');
-        if (searchQuery !== undefined) {
-            setFilters(prev => ({ ...prev, searchQuery: searchQuery || undefined }));
-            setPagination(prev => ({ ...prev, currentPage: 1 }));
+
+        setFilters(prev => ({
+            ...prev,
+            searchQuery: searchQuery || undefined
+        }));
+
+        if (searchQuery) {
+            setPagination(prev => ({
+                ...prev,
+                currentPage: 1
+            }));
         }
     }, [location.search, setFilters, setPagination]);
 };
 
-export const MainPage = () => {
+interface MainPageProps {
+    posts: Post[];
+    setPosts: React.Dispatch<React.SetStateAction<Post[]>>;
+    pagination: PaginationState;
+    setPagination: React.Dispatch<React.SetStateAction<PaginationState>>;
+    currentUser: User | null;
+}
+
+export const MainPage = ({
+    posts,
+    setPosts,
+    pagination,
+    setPagination,
+    currentUser
+}: MainPageProps) => {
     const { t } = useTranslation();
-    const [posts, setPosts] = useState<Post[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [pagination, setPagination] = useState<PaginationState>({
-        currentPage: 1,
-        totalPages: 1,
-        totalItems: 0,
-        itemsPerPage: 7
-    });
     const [sortBy, setSortBy] = useState('publishDate');
     const [filters, setFilters] = useState<FilterState>({});
 
     useSearchQuery(setFilters, setPagination);
 
-    const fetchPosts = async (page: number, sort: string, currentFilters: FilterState) => {
+    const fetchPosts = useCallback(async (
+        page: number,
+        sort: string,
+        currentFilters: FilterState
+    ) => {
         setIsLoading(true);
         try {
             const params = new URLSearchParams({
@@ -156,6 +175,9 @@ export const MainPage = () => {
                 sort
             });
 
+            if (currentFilters.searchQuery) {
+                params.append('searchQuery', currentFilters.searchQuery);
+            }
             if (currentFilters.dateInterval?.startDate) {
                 params.append('startDate', currentFilters.dateInterval.startDate);
             }
@@ -165,46 +187,96 @@ export const MainPage = () => {
             if (currentFilters.categoryIds?.length) {
                 params.append('categories', currentFilters.categoryIds.join(','));
             }
-            if (currentFilters.searchQuery) {
-                params.append('searchQuery', currentFilters.searchQuery);
-            }
 
             const response = await axios.get(`${config.backendUrl}/posts`, { params });
             setPosts(response.data.posts);
-            setPagination(response.data.pagination);
+            setPagination(prev => ({
+                ...prev,
+                totalPages: response.data.pagination.totalPages,
+                totalItems: response.data.pagination.totalItems
+            }));
         } catch (err) {
             console.error('Error fetching posts:', err);
             setError(t('mainPage.errors.loadFailed'));
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [pagination.itemsPerPage, setPosts, setPagination, t]);
 
     useEffect(() => {
         fetchPosts(pagination.currentPage, sortBy, filters);
-    }, [pagination.currentPage, sortBy, filters, t]);
+    }, [pagination.currentPage, sortBy, filters, fetchPosts]);
 
     const handleSortChange = (newSort: string) => {
         setSortBy(newSort);
-        setPagination(prev => ({ ...prev, currentPage: 1 }));
+        setPagination(prev => ({
+            ...prev,
+            currentPage: 1
+        }));
+    };
+
+    const handleDeletePost = async (postId: number) => {
+        try {
+            await axios.delete(`${config.backendUrl}/posts/${postId}`);
+
+            // Calculate new total items and pages
+            const newTotalItems = pagination.totalItems - 1;
+            const newTotalPages = Math.ceil(newTotalItems / pagination.itemsPerPage);
+
+            // If we're on a page that no longer exists after deletion, go to the last page
+            if (pagination.currentPage > newTotalPages && newTotalPages > 0) {
+                setPagination(prev => ({
+                    ...prev,
+                    currentPage: newTotalPages
+                }));
+            }
+
+            // Refresh the posts
+            await fetchPosts(
+                pagination.currentPage > newTotalPages ? newTotalPages : pagination.currentPage,
+                sortBy,
+                filters
+            );
+
+            setError(null);
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                setError(error.response?.data?.error || t('mainPage.errors.deleteFailed'));
+            } else {
+                setError(t('mainPage.errors.deleteFailed'));
+            }
+        }
     };
 
     const handleFilterChange = (newFilters: Partial<FilterState>) => {
-        setFilters(prev => ({ ...prev, ...newFilters }));
-        setPagination(prev => ({ ...prev, currentPage: 1 }));
+        setFilters(prev => ({
+            ...prev,
+            ...newFilters
+        }));
+        setPagination(prev => ({
+            ...prev,
+            currentPage: 1
+        }));
     };
 
     const handleResetAll = () => {
         setSortBy('publishDate');
         setFilters({});
-        setPagination(prev => ({ ...prev, currentPage: 1 }));
+        setPagination(prev => ({
+            ...prev,
+            currentPage: 1
+        }));
     };
 
     const handlePageChange = (newPage: number) => {
         if (newPage >= 1 && newPage <= pagination.totalPages) {
-            setPagination(prev => ({ ...prev, currentPage: newPage }));
+            setPagination(prev => ({
+                ...prev,
+                currentPage: newPage
+            }));
         }
     };
+    console.log(currentUser)
 
     return (
         <div className="min-h-screen">
@@ -217,7 +289,9 @@ export const MainPage = () => {
                         <p className="text-gray-600 dark:text-gray-400 mt-2">
                             {t('mainPage.postsFound', {
                                 count: pagination.totalItems,
-                                inCategories: filters.categoryIds?.length ? t('mainPage.inSelectedCategories') : ''
+                                inCategories: filters.categoryIds?.length
+                                    ? t('mainPage.inSelectedCategories')
+                                    : ''
                             })}
                         </p>
                     </div>
@@ -241,14 +315,22 @@ export const MainPage = () => {
                 {isLoading ? (
                     <LoadingSkeleton />
                 ) : error ? (
-                    <ErrorMessage error={error} onRetry={() => fetchPosts(pagination.currentPage, sortBy, filters)} />
+                    <ErrorMessage
+                        error={error}
+                        onRetry={() => fetchPosts(pagination.currentPage, sortBy, filters)}
+                    />
                 ) : posts.length === 0 ? (
                     <EmptyState hasFilters={Boolean(filters.categoryIds?.length)} />
                 ) : (
                     <div className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {posts.map(post => (
-                                <PostCard key={post.id} post={post} />
+                                <PostCard
+                                    key={post.id}
+                                    post={post}
+                                    currentUser={currentUser}
+                                    onDelete={handleDeletePost}
+                                />
                             ))}
                         </div>
                         {posts.length > 0 && (

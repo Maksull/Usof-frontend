@@ -98,6 +98,12 @@ const resources = {
                     to: "to",
                     resetAll: "Reset All Filters"
                 },
+                delete: "Delete",
+                deleting: "Deleting...",
+                deleteError: "Failed to delete comment",
+                deleteConfirmTitle: "Delete Comment",
+                deleteConfirmMessage: "Are you sure you want to delete this comment? This action cannot be undone.",
+                confirmDelete: "Delete",
                 unknownUser: "unknown",
                 replyingTo: "Replying to @{{username}}",
                 likeComment: "Like comment",
@@ -176,6 +182,7 @@ const resources = {
                 saveChanges: "Save Changes",
                 backToHome: "Back to Home",
                 retry: "Retry",
+                delete: "Delete",
             },
             posts: {
                 sort: {
@@ -239,7 +246,8 @@ const resources = {
                 tabs: {
                     posts: "Posts",
                     comments: "Comments",
-                    categories: "Categories"
+                    categories: "Categories",
+                    users: "Users"
                 },
                 accessibility: {
                     tabsNavigation: "Admin dashboard navigation",
@@ -291,6 +299,27 @@ const resources = {
                 errors: {
                     loadFailed: "Failed to load posts",
                     deleteFailed: "Failed to delete post"
+                }
+            },
+            usersManagement: {
+                title: "Users Management",
+                table: {
+                    user: "User",
+                    role: "Role",
+                    stats: "Activity",
+                    actions: "Actions"
+                },
+                stats: "{{posts}} posts, {{comments}} comments",
+                confirmDelete: "Are you sure you want to delete this user? This action cannot be undone.",
+                errors: {
+                    loadFailed: "Failed to load users",
+                    updateFailed: "Failed to update user role",
+                    deleteFailed: "Failed to delete user"
+                },
+                deleteModal: {
+                    title: "Delete User",
+                    description: "Are you sure you want to delete this user? This action cannot be undone. All posts and comments by this user will remain.",
+                    confirmButton: "Delete User"
                 }
             },
             pagination: {
@@ -352,6 +381,9 @@ const resources = {
                 loadingError: "Error Loading Post",
                 notFound: "Post not found",
                 returnHome: "Return Home",
+                viewFullImage: "View Full Image",
+                closeFullImage: "Close",
+                swipeToClose: "Swipe down to close",
                 actions: {
                     like: "Like post",
                     dislike: "Dislike post",
@@ -485,6 +517,12 @@ const resources = {
                     to: "до",
                     resetAll: "Скинути всі фільтри"
                 },
+                delete: "Видалити",
+                deleting: "Видалення...",
+                deleteError: "Не вдалося видалити коментар",
+                deleteConfirmTitle: "Видалити коментар",
+                deleteConfirmMessage: "Ви впевнені, що хочете видалити цей коментар? Цю дію неможливо скасувати.",
+                confirmDelete: "Видалити",
                 unknownUser: "невідомий",
                 replyingTo: "Відповідь для @{{username}}",
                 likeComment: "Вподобати коментар",
@@ -566,7 +604,8 @@ const resources = {
                 cancel: "Скасувати",
                 saving: "Збереження...",
                 saveChanges: "Зберегти зміни",
-                retry: "Повторити"
+                retry: "Повторити",
+                delete: "Видалити",
             },
             posts: {
                 sort: {
@@ -630,7 +669,8 @@ const resources = {
                 tabs: {
                     posts: "Дописи",
                     comments: "Коментарі",
-                    categories: "Категорії"
+                    categories: "Категорії",
+                    users: "Користувачі"
                 },
                 accessibility: {
                     tabsNavigation: "Навігація панелі адміністратора",
@@ -682,6 +722,27 @@ const resources = {
                 errors: {
                     loadFailed: "Не вдалося завантажити дописи",
                     deleteFailed: "Не вдалося видалити допис"
+                }
+            },
+            usersManagement: {
+                title: "Управління користувачами",
+                table: {
+                    user: "Користувач",
+                    role: "Роль",
+                    stats: "Активність",
+                    actions: "Дії"
+                },
+                stats: "{{posts}} дописів, {{comments}} коментарів",
+                confirmDelete: "Ви впевнені, що хочете видалити цього користувача? Цю дію неможливо скасувати.",
+                errors: {
+                    loadFailed: "Не вдалося завантажити користувачів",
+                    updateFailed: "Не вдалося оновити роль користувача",
+                    deleteFailed: "Не вдалося видалити користувача"
+                },
+                deleteModal: {
+                    title: "Видалити користувача",
+                    description: "Ви впевнені, що хочете видалити цього користувача? Цю дію неможливо скасувати. Всі дописи та коментарі користувача залишаться.",
+                    confirmButton: "Видалити користувача"
                 }
             },
             pagination: {
@@ -743,6 +804,9 @@ const resources = {
                 loadingError: "Помилка завантаження допису",
                 notFound: "Допис не знайдено",
                 returnHome: "Повернутися на головну",
+                viewFullImage: "Переглянути повне зображення",
+                closeFullImage: "Закрити",
+                swipeToClose: "Проведіть вниз, щоб закрити",
                 actions: {
                     like: "Вподобати допис",
                     dislike: "Не вподобати допис",

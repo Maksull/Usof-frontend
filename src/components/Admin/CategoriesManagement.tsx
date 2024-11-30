@@ -103,7 +103,7 @@ export const CategoriesManagement = () => {
     const handleDelete = async (id: number) => {
         if (!window.confirm(t('categories.confirmDelete'))) return;
         try {
-            await axios.delete(`${config.backendUrl}/admin/categories/${id}`);
+            await axios.delete(`${config.backendUrl}/categories/${id}`);
             await fetchCategories(pagination.currentPage);
         } catch (error) {
             setError(t('categories.errors.deleteFailed'));

@@ -1,19 +1,30 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { User, UserRole } from './models/User';
-import { ChangeEmailPage, ChangePasswordPage, CreatePostPage, Footer, Header, LoginPage, MainPage, PostPage, ProfilePage, NotificationModal, UserPosts, UserComments, AdminDashboard } from './components';
+import {
+    ChangeEmailPage,
+    ChangePasswordPage,
+    CreatePostPage,
+    Footer,
+    Header,
+    LoginPage,
+    MainPage,
+    PostPage,
+    ProfilePage,
+    NotificationModal,
+    UserPosts,
+    UserComments,
+    AdminDashboard
+} from './components';
 import { AuthService, UsersService } from './services';
 import { mapDtoToUser } from './utils/mapping';
 import { Loader2 } from 'lucide-react';
-
 
 const LoadingSpinner = () => (
     <div className="fixed inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-50">
         <div className="flex flex-col items-center space-y-4">
             <Loader2 className="w-12 h-12 text-blue-600 dark:text-blue-400 animate-spin" />
-            <p className="text-gray-600 dark:text-gray-300 text-sm font-medium">
-                Loading...
-            </p>
+            <p className="text-gray-600 dark:text-gray-300 text-sm font-medium">Loading...</p>
         </div>
     </div>
 );
@@ -26,12 +37,29 @@ const ScrollToTop = () => {
     return null;
 };
 
+interface Pagination {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+}
+
 function App() {
+    // User related states
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showNotification, setShowNotification] = useState(false);
     const [isInitialized, setIsInitialized] = useState(false);
+
+    // Posts related states (lifted up from MainPage)
+    const [posts, setPosts] = useState<any[]>([]);
+    const [pagination, setPagination] = useState<Pagination>({
+        currentPage: 1,
+        totalPages: 1,
+        totalItems: 0,
+        itemsPerPage: 7
+    });
 
     useEffect(() => {
         const initializeAuth = async () => {
@@ -49,7 +77,6 @@ function App() {
             setIsLoading(false);
             setIsInitialized(true);
         };
-
         initializeAuth();
     }, []);
 
@@ -82,7 +109,6 @@ function App() {
         }
     };
 
-    // Show loading spinner while checking authentication
     if (!isInitialized) {
         return <LoadingSpinner />;
     }
@@ -94,7 +120,11 @@ function App() {
                 <Header
                     currentUser={user}
                     onLogout={handleLogout}
-                    onLogin={() => window.location.href = '/login'}
+                    onLogin={handleLogin}
+                    setPosts={setPosts}
+                    setPagination={setPagination}
+                    setError={setError}
+                    setIsLoading={setIsLoading}
                 />
                 <main className="flex-grow relative">
                     {isLoading && <LoadingSpinner />}
@@ -104,32 +134,45 @@ function App() {
                                 path="/login"
                                 element={user ? <Navigate to="/" replace /> : <LoginPage onLogin={handleLogin} />}
                             />
-                            <Route path="/" element={<MainPage />} />
+                            <Route
+                                path="/"
+                                element={
+                                    <MainPage
+                                        posts={posts}
+                                        setPosts={setPosts}
+                                        pagination={pagination}
+                                        setPagination={setPagination}
+                                        currentUser={user}
+                                    />
+                                }
+                            />
                             <Route
                                 path="/profile"
-                                element={user ? <ProfilePage user={user} onUserUpdate={setUser} /> : <Navigate to="/login" replace />}
+                                element={user ? <ProfilePage user={user} onUserUpdate={setUser} /> : <Navigate to="/login" />}
                             />
                             <Route
                                 path="/create-post"
-                                element={user ? <CreatePostPage /> : <Navigate to="/login" replace />}
+                                element={user ? <CreatePostPage /> : <Navigate to="/login" />}
                             />
-                            <Route path="/post/:id" element={<PostPage />} />
+                            <Route path="/post/:id" element={<PostPage currentUser={user} />} />
                             <Route
                                 path="/my-comments"
-                                element={user ? <UserComments user={user} /> : <Navigate to="/login" replace />}
+                                element={user ? <UserComments user={user} /> : <Navigate to="/login" />}
                             />
                             <Route
                                 path="/my-posts"
-                                element={user ? <UserPosts user={user} /> : <Navigate to="/login" replace />}
+                                element={user ? <UserPosts user={user} /> : <Navigate to="/login" />}
                             />
                             <Route path="/reset-password/:token" element={<ChangePasswordPage />} />
                             <Route path="/change-email/:token" element={<ChangeEmailPage />} />
                             <Route
                                 path="/admin"
                                 element={
-                                    user?.role == UserRole.ADMIN
-                                        ? <AdminDashboard currentUser={user} />
-                                        : <Navigate to="/" replace />
+                                    user?.role === UserRole.ADMIN ? (
+                                        <AdminDashboard currentUser={user} />
+                                    ) : (
+                                        <Navigate to="/" />
+                                    )
                                 }
                             />
                             {!user && <Route path="*" element={<Navigate to="/login" replace />} />}

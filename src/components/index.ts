@@ -8,6 +8,7 @@ export { AdminDashboard } from "./Admin/AdminDashboard";
 export { PostsManagement } from "./Admin/PostsManagement";
 export { CommentsManagement } from "./Admin/CommentsManagement";
 export { CategoriesManagement } from "./Admin/CategoriesManagement";
+export { UsersManagement } from "./Admin/UsersManagement";
 
 export { ProfilePage } from "./Profile/ProfilePage";
 export { ChangeEmailPage } from "./Profile/ChangeEmailPage";

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Post as PostModel } from '../../models/Post';
 import { CommentsService, LikesService, PostsService } from '../../services';
-import { Category } from '../../models';
+import { Category, User, UserRole } from '../../models';
 import {
     ThumbsDown,
     ThumbsUp,
@@ -11,7 +11,7 @@ import {
     X,
     Loader2,
     Calendar,
-    User,
+    User as UserIcon,
     MessageSquare,
     Camera,
     Send
@@ -19,12 +19,13 @@ import {
 import axios from 'axios';
 import config from '../../config';
 import { CommentComponent } from '..';
-import { PostCommentFilter } from './PostCommentFilter';
 import { useTranslation } from 'react-i18next';
+import { PostCommentFilter } from './PostCommentFilter';
 
 // Types and interfaces
 export interface ExtendedPost extends PostModel {
     isAuthor: boolean;
+    canEdit: boolean;
 }
 
 interface PostHeaderProps {
@@ -56,12 +57,14 @@ interface CommentSectionProps {
     setPost: (post: ExtendedPost | null) => void;
     isLiking: boolean;
     onCommentLike: (commentId: number, isLike: boolean) => Promise<void>;
+    currentUser: User | null;
 }
 
 // Utility functions
-export const transformToExtendedPost = (post: PostModel): ExtendedPost => ({
+export const transformToExtendedPost = (post: PostModel, currentUser: User | null): ExtendedPost => ({
     ...post,
-    isAuthor: (post as any).isAuthor ?? false
+    isAuthor: (post as any).isAuthor ?? false,
+    canEdit: currentUser?.role === UserRole.ADMIN || ((post as any).isAuthor ?? false),
 });
 
 // Component sections
@@ -77,7 +80,7 @@ const PostHeader: React.FC<PostHeaderProps> = ({ post, onBack, onEdit, isEditing
                     <ChevronLeft className="w-5 h-5 mr-2 transform group-hover:-translate-x-1 transition-transform" />
                     {t('post.backToPosts')}
                 </button>
-                {post.isAuthor && !isEditing && (
+                {post.canEdit && !isEditing && (
                     <button
                         onClick={onEdit}
                         className="inline-flex items-center px-4 py-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
@@ -92,30 +95,88 @@ const PostHeader: React.FC<PostHeaderProps> = ({ post, onBack, onEdit, isEditing
 };
 
 
-const PostImage: React.FC<{ src?: string; title?: string }> = ({ src, title }) => (
-    <div className="relative aspect-video w-full">
-        {src ? (
-            <img
-                src={src}
-                alt={title}
-                className="w-full h-full object-cover"
-            />
-        ) : (
-            <div className="w-full h-full bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 flex items-center justify-center">
-                <Camera className="w-16 h-16 text-blue-300 dark:text-blue-500" />
-            </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-    </div>
-);
+const PostImage: React.FC<{ src?: string; title?: string }> = ({ src, title }) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const { t } = useTranslation();
 
+    const handleImageClick = () => {
+        if (src) {
+            setIsModalOpen(true);
+        }
+    };
+
+    return (
+        <>
+            {/* Thumbnail view */}
+            <div className="relative w-full h-[300px] md:h-[400px] lg:h-[500px] bg-gray-100 dark:bg-gray-800">
+                {src ? (
+                    <div
+                        onClick={handleImageClick}
+                        className="relative w-full h-full cursor-pointer group"
+                    >
+                        <img
+                            src={src}
+                            alt={title}
+                            className="w-full h-full object-cover transition-opacity"
+                        />
+                        {/* Hover overlay */}
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <div className="bg-black/50 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                                <Camera className="w-5 h-5" />
+                                <span className="text-sm font-medium">{t('post.viewFullImage')}</span>
+                            </div>
+                        </div>
+                        {/* Bottom gradient */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                    </div>
+                ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 flex items-center justify-center">
+                        <Camera className="w-16 h-16 text-blue-300 dark:text-blue-500" />
+                    </div>
+                )}
+            </div>
+
+            {/* Full screen modal */}
+            {isModalOpen && (
+                <div
+                    className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm"
+                    onClick={() => setIsModalOpen(false)}
+                >
+                    {/* Close button - always visible on mobile */}
+                    <button
+                        onClick={() => setIsModalOpen(false)}
+                        className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+                        aria-label={t('post.closeFullImage')}
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
+
+                    {/* Image container */}
+                    <div className="w-full h-full flex items-center justify-center p-4 md:p-8">
+                        <div
+                            className="relative max-w-5xl w-full h-full flex items-center justify-center"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <img
+                                src={src}
+                                alt={title}
+                                className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg"
+                                style={{ maxHeight: 'calc(100vh - 4rem)' }}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+};
 const PostMetadata: React.FC<{ post: ExtendedPost }> = ({ post }) => {
     const { t } = useTranslation();
     return (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div className="flex items-center space-x-4">
                 <div className="flex items-center">
-                    <User className="w-5 h-5 mr-2 text-gray-500" />
+                    <UserIcon className="w-5 h-5 mr-2 text-gray-500" />
                     <span className="text-gray-700 dark:text-gray-300">
                         {post.author?.login || t('post.unknownAuthor')}
                     </span>
@@ -363,7 +424,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     error,
     setPost,
     isLiking,
-    onCommentLike
+    onCommentLike,
+    currentUser,
 }) => {
     const { t } = useTranslation();
     const [content, setContent] = useState('');
@@ -482,6 +544,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                     comments={filteredComments}
                     setPost={setPost}
                     isLiking={isLiking}
+                    currentUser={currentUser}
                     onCommentLike={onCommentLike}
                 />
             </div>
@@ -508,8 +571,13 @@ const LoadingSkeleton = () => (
     </div>
 );
 
+
+interface PostPageProps {
+    currentUser: User | null;
+}
+
 // Main PostPage Component
-export const PostPage = () => {
+export const PostPage: React.FC<PostPageProps> = ({ currentUser }) => {
     const { t } = useTranslation();
     const { id } = useParams();
     const navigate = useNavigate();
@@ -534,7 +602,7 @@ export const PostPage = () => {
                     PostsService.getPostById(parseInt(id, 10)),
                     axios.get(`${config.backendUrl}/categories`)
                 ]);
-                setPost(transformToExtendedPost(postResponse));
+                setPost(transformToExtendedPost(postResponse, currentUser));
                 setCategories(categoriesResponse.data);
             } catch (err) {
                 setError(t('post.errors.loadFailed'));
@@ -555,7 +623,7 @@ export const PostPage = () => {
         try {
             await LikesService.createLike(post.id, undefined, isLike);
             const updatedPost = await PostsService.getPostById(post.id);
-            setPost(transformToExtendedPost(updatedPost));
+            setPost(transformToExtendedPost(updatedPost, currentUser));
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : t('post.errors.likeFailed');
             setLikeError(errorMessage);
@@ -572,7 +640,7 @@ export const PostPage = () => {
         try {
             await CommentsService.createComment(post.id, content);
             const updatedPost = await PostsService.getPostById(post.id);
-            setPost(transformToExtendedPost(updatedPost));
+            setPost(transformToExtendedPost(updatedPost, currentUser));
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : t('post.errors.commentFailed');
             setCommentError(errorMessage);
@@ -589,7 +657,7 @@ export const PostPage = () => {
         try {
             await LikesService.createLike(undefined, commentId, isLike);
             const updatedPost = await PostsService.getPostById(post!.id);
-            setPost(transformToExtendedPost(updatedPost));
+            setPost(transformToExtendedPost(updatedPost, currentUser));
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : t('post.errors.likeFailed');
             setLikeError(errorMessage);
@@ -605,7 +673,7 @@ export const PostPage = () => {
 
         try {
             const updatedPost = await PostsService.updatePost(post.id, formData);
-            setPost(transformToExtendedPost(updatedPost));
+            setPost(transformToExtendedPost(updatedPost, currentUser));
             setIsEditing(false);
         } catch (err) {
             setEditError(t('post.errors.updateFailed'));
@@ -701,6 +769,7 @@ export const PostPage = () => {
                                         error={commentError}
                                         setPost={setPost}
                                         isLiking={isLiking}
+                                        currentUser={currentUser}
                                         onCommentLike={handleCommentLike}
                                     />
                                 </div>
