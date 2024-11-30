@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ThumbsUp, ThumbsDown, MessageSquare, ImageIcon, Trash2 } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, MessageSquare, ImageIcon, Trash2, User as UserIcon } from 'lucide-react';
 import { Post, LikeType, User, UserRole } from '../../models';
 import { DeleteModal } from '..';
 
@@ -12,7 +12,10 @@ interface PostCardProps {
 
 export const PostCard: React.FC<PostCardProps> = ({ post, currentUser, onDelete }) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const canDelete = currentUser && onDelete && (currentUser.id === post.authorId || currentUser.role === UserRole.ADMIN);
+
+    const canDelete = currentUser &&
+        onDelete &&
+        (currentUser.id === post.authorId || currentUser.role === UserRole.ADMIN);
 
     const displayCategories = post.categories.slice(0, 3);
     const remainingCount = post.categories.length - 3;
@@ -68,7 +71,14 @@ export const PostCard: React.FC<PostCardProps> = ({ post, currentUser, onDelete 
                 </h2>
             </Link>
 
-            <p className="mt-2 text-gray-600 dark:text-gray-300 line-clamp-3">
+            <div className="flex items-center mt-2 mb-3">
+                <UserIcon className="w-4 h-4 text-gray-400 mr-2" />
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                    {post.author.login}
+                </span>
+            </div>
+
+            <p className="text-gray-600 dark:text-gray-300 line-clamp-3 whitespace-pre-line">
                 {post.content}
             </p>
 

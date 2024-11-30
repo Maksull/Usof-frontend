@@ -1,25 +1,38 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Menu, User as UserIcon, LogOut, Sun, Moon, ChevronDown, X, FileText, MessageSquare, ShieldCheck } from 'lucide-react';
+import { Search, Menu, User as UserIcon, LogOut, Sun, Moon, ChevronDown, FileText, MessageSquare, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { User, UserRole } from '../../models';
+import axios from 'axios';
+import config from '../../config';
+import { SearchBar } from './SearchBar';
 
 interface HeaderProps {
     currentUser: User | null;
     onLogout: () => void;
     onLogin: () => void;
+    setPosts: React.Dispatch<React.SetStateAction<any[]>>;
+    setPagination: React.Dispatch<React.SetStateAction<any>>;
+    setError: React.Dispatch<React.SetStateAction<string | null>>;
+    setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export const Header = ({ currentUser, onLogout, onLogin }: HeaderProps) => {
+export const Header = ({
+    currentUser,
+    onLogout,
+    onLogin,
+    setPosts,
+    setPagination,
+    setError,
+    setIsLoading
+}: HeaderProps) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const { theme, toggleTheme } = useTheme();
     const { t } = useTranslation();
-    const navigate = useNavigate();
-
     const searchRef = useRef<HTMLDivElement>(null);
     const profileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -32,17 +45,32 @@ export const Header = ({ currentUser, onLogout, onLogin }: HeaderProps) => {
                 setIsSearchFocused(false);
             }
         };
+
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const handleSearch = (e: React.FormEvent) => {
+    const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
         if (searchQuery.trim()) {
-            navigate(`/?searchQuery=${encodeURIComponent(searchQuery.trim())}`);
-            setIsSearchFocused(false);
-        } else {
-            navigate('/');
+            setIsLoading(true);
+            try {
+                const params = new URLSearchParams({
+                    page: '1',
+                    limit: '7',
+                    searchQuery: searchQuery.trim()
+                });
+
+                const response = await axios.get(`${config.backendUrl}/posts?${params.toString()}`);
+                setPosts(response.data.posts);
+                setPagination(response.data.pagination);
+                setIsSearchFocused(false);
+            } catch (err) {
+                console.error('Search failed:', err);
+                setError('Search failed. Please try again.');
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 
@@ -65,32 +93,14 @@ export const Header = ({ currentUser, onLogout, onLogin }: HeaderProps) => {
                     </div>
 
                     <div ref={searchRef} className={`hidden md:block relative flex-grow max-w-xl mx-8 ${isSearchFocused ? 'z-20' : ''}`}>
-                        <form onSubmit={handleSearch}>
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    placeholder={t('header.search')}
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    onFocus={() => setIsSearchFocused(true)}
-                                    className={`w-full px-4 py-2 pl-10 pr-4 rounded-lg border 
-                    transition-all duration-200
-                    ${isSearchFocused ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800' : 'border-gray-300 dark:border-gray-600'} 
-                    bg-white dark:bg-gray-700 
-                    text-gray-900 dark:text-gray-100`}
-                                />
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-5 w-5" />
-                                {searchQuery && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setSearchQuery('')}
-                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </button>
-                                )}
-                            </div>
-                        </form>
+                        <SearchBar
+                            onSearch={({ posts, pagination }) => {
+                                setPosts(posts);
+                                setPagination(pagination);
+                            }}
+                            setIsLoading={setIsLoading}
+                            setError={setError}
+                        />
                     </div>
 
                     <div className="flex items-center space-x-4">
@@ -196,12 +206,12 @@ export const Header = ({ currentUser, onLogout, onLogin }: HeaderProps) => {
                                 )}
                             </div>
                         ) : (
-                            <button
-                                onClick={onLogin}
+                            <Link
+                                to="/login"
                                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg"
                             >
                                 {t('header.login')}
-                            </button>
+                            </Link>
                         )}
 
                         <button
