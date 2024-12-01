@@ -231,24 +231,38 @@ const resources = {
                 },
                 register: {
                     title: "Create Account",
-                    subtitle: "Sign up to get started with your new account"
+                    subtitle: "Sign up to get started with your new account",
+                    verificationSent: "Verification code has been sent to your email",
+                    verificationSuccess: "Email verified successfully!",
+                    verificationFailed: "Email verification failed",
+                    resendCode: "Resend Code",
+                    codeResent: "Verification code has been resent",
+                    awaitingVerification: "Please check your email for verification code"
                 },
                 form: {
                     usernamePlaceholder: "Username",
                     passwordPlaceholder: "Password",
                     emailPlaceholder: "Email",
                     fullNamePlaceholder: "Full Name",
+                    verificationCodePlaceholder: "Enter verification code",
                     creatingAccount: "Creating Account...",
                     signingIn: "Signing In...",
+                    verifying: "Verifying...",
+                    verify: "Verify Email",
                     createAccount: "Create Account",
                     signIn: "Sign In",
                     alreadyHaveAccount: "Already have an account? Sign in",
-                    needAccount: "Need an account? Register"
+                    needAccount: "Need an account? Register",
+                    resendCodeTimer: "Resend code in {{seconds}}s"
                 },
                 errors: {
                     generic: "Authentication failed",
                     loginFailed: "Login failed. Please check your credentials and try again",
                     registrationFailed: "Registration failed. Please try again",
+                    verificationFailed: "Verification failed. Please try again",
+                    codeSendFailed: "Failed to send verification code",
+                    codeExpired: "Verification code has expired",
+                    codeInvalid: "Invalid verification code",
                     userExists: "User with this username or email already exists",
                     invalidCredentials: "Invalid username or password",
                     networkError: "Network error. Please check your connection",
@@ -686,24 +700,38 @@ const resources = {
                 },
                 register: {
                     title: "Створити обліковий запис",
-                    subtitle: "Зареєструйтеся, щоб розпочати роботу з новим обліковим записом"
+                    subtitle: "Зареєструйтеся, щоб розпочати роботу з новим обліковим записом",
+                    verificationSent: "Код підтвердження надіслано на вашу електронну пошту",
+                    verificationSuccess: "Електронну пошту підтверджено успішно!",
+                    verificationFailed: "Помилка підтвердження електронної пошти",
+                    resendCode: "Надіслати код повторно",
+                    codeResent: "Код підтвердження надіслано повторно",
+                    awaitingVerification: "Будь ласка, перевірте вашу електронну пошту для отримання коду підтвердження"
                 },
                 form: {
                     usernamePlaceholder: "Ім'я користувача",
                     passwordPlaceholder: "Пароль",
                     emailPlaceholder: "Електронна пошта",
                     fullNamePlaceholder: "Повне ім'я",
+                    verificationCodePlaceholder: "Введіть код підтвердження",
                     creatingAccount: "Створення облікового запису...",
                     signingIn: "Вхід...",
+                    verifying: "Перевірка...",
+                    verify: "Підтвердити email",
                     createAccount: "Створити обліковий запис",
                     signIn: "Увійти",
                     alreadyHaveAccount: "Вже маєте обліковий запис? Увійти",
-                    needAccount: "Потрібен обліковий запис? Зареєструватися"
+                    needAccount: "Потрібен обліковий запис? Зареєструватися",
+                    resendCodeTimer: "Надіслати код повторно через {{seconds}}с"
                 },
                 errors: {
                     generic: "Помилка аутентифікації",
                     loginFailed: "Помилка входу. Перевірте свої дані та спробуйте ще раз",
                     registrationFailed: "Помилка реєстрації. Будь ласка, спробуйте ще раз",
+                    verificationFailed: "Помилка підтвердження. Будь ласка, спробуйте ще раз",
+                    codeSendFailed: "Не вдалося надіслати код підтвердження",
+                    codeExpired: "Термін дії коду підтвердження закінчився",
+                    codeInvalid: "Недійсний код підтвердження",
                     userExists: "Користувач з таким ім'ям або email вже існує",
                     invalidCredentials: "Невірне ім'я користувача або пароль",
                     networkError: "Помилка мережі. Перевірте підключення",

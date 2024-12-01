@@ -2,41 +2,107 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthService } from '../../services';
-import { User, Lock, Mail, UserPlus, LogIn, Loader2, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, Mail, UserPlus, LogIn, Loader2, KeyRound, Eye, EyeOff, RefreshCw } from 'lucide-react';
 import { ErrorModal } from '../../components';
+import axios from 'axios';
+import config from '../../config';
 
 interface LoginPageProps {
     onLogin: () => void;
 }
 
+interface ErrorDetails {
+    message: string;
+    details?: string;
+    code?: string;
+}
+
 export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     const { t } = useTranslation();
+    const navigate = useNavigate();
+
+    // Form states
     const [isRegister, setIsRegister] = useState(false);
     const [login, setLogin] = useState('');
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
     const [fullName, setFullName] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [showErrorModal, setShowErrorModal] = useState(false);
-    const [errorDetails, setErrorDetails] = useState<{
-        message: string;
-        details?: string;
-        code?: string;
-    } | null>(null);
+
+    // Verification states
+    const [verificationCode, setVerificationCode] = useState('');
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [codeSent, setCodeSent] = useState(false);
+    const [resendDisabled, setResendDisabled] = useState(false);
+    const [resendCountdown, setResendCountdown] = useState(0);
+
+    // UI states
     const [isLoading, setIsLoading] = useState(false);
-    const navigate = useNavigate();
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const [errorDetails, setErrorDetails] = useState<ErrorDetails | null>(null);
+
+    const startResendCountdown = () => {
+        setResendDisabled(true);
+        setResendCountdown(30);
+        const interval = setInterval(() => {
+            setResendCountdown((prev) => {
+                if (prev <= 1) {
+                    clearInterval(interval);
+                    setResendDisabled(false);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    };
+
+    const sendVerificationCode = async () => {
+        try {
+            setIsLoading(true);
+            await axios.post(`${config.backendUrl}/auth/send-verification`, { email });
+            setCodeSent(true);
+            setIsVerifying(true);
+            startResendCountdown();
+        } catch (error: any) {
+            setErrorDetails({
+                message: error.response?.data?.message || t('auth.errors.verificationFailed'),
+                details: t('auth.errors.codeSendFailed'),
+                code: 'VERIFICATION_ERROR'
+            });
+            setShowErrorModal(true);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
+
         try {
             if (isRegister) {
-                await AuthService.register({ login, password, email, fullName });
+                if (!codeSent) {
+                    await sendVerificationCode();
+                    return;
+                }
+
+                if (isVerifying) {
+                    const verifyResponse = await axios.post(`${config.backendUrl}/auth/verify-email`, {
+                        email,
+                        code: verificationCode
+                    });
+
+                    if (verifyResponse.data.message === 'Email verified successfully') {
+                        await AuthService.register({ login, password, email, fullName });
+                        setIsVerifying(false);
+                        navigate('/');
+                    }
+                }
             } else {
                 await AuthService.login({ login, password });
                 onLogin();
+                navigate('/');
             }
-            navigate('/');
         } catch (error: any) {
             setErrorDetails({
                 message: error.response?.data?.message || t('auth.errors.generic'),
@@ -49,6 +115,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         }
     };
 
+    const toggleRegistration = () => {
+        setIsRegister(!isRegister);
+        setPassword('');
+        setShowPassword(false);
+        setVerificationCode('');
+        setIsVerifying(false);
+        setCodeSent(false);
+        setEmail('');
+        setFullName('');
+        setLogin('');
+    };
+
     const inputBaseClasses = `
     w-full px-4 py-3 pl-12 rounded-lg
     bg-white dark:bg-gray-800 
@@ -59,7 +137,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     transition-all duration-200
   `;
 
-    const IconWrapper = ({ children }: { children: React.ReactNode }) => (
+    const IconWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500">
             {children}
         </div>
@@ -148,6 +226,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                                                 placeholder={t('auth.form.emailPlaceholder')}
                                             />
                                         </div>
+
                                         <div className="relative">
                                             <IconWrapper>
                                                 <User className="w-5 h-5" />
@@ -162,6 +241,36 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                                                 placeholder={t('auth.form.fullNamePlaceholder')}
                                             />
                                         </div>
+
+                                        {isVerifying && (
+                                            <div className="relative">
+                                                <IconWrapper>
+                                                    <Lock className="w-5 h-5" />
+                                                </IconWrapper>
+                                                <input
+                                                    id="verificationCode"
+                                                    type="text"
+                                                    required
+                                                    value={verificationCode}
+                                                    onChange={(e) => setVerificationCode(e.target.value)}
+                                                    className={inputBaseClasses}
+                                                    placeholder={t('auth.form.verificationCodePlaceholder')}
+                                                />
+                                                {codeSent && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={sendVerificationCode}
+                                                        disabled={resendDisabled}
+                                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-500 hover:text-blue-600 disabled:text-gray-400 transition-colors"
+                                                    >
+                                                        <div className="flex items-center">
+                                                            <RefreshCw className="h-5 w-5 mr-1" />
+                                                            {resendDisabled && <span className="text-sm">{resendCountdown}s</span>}
+                                                        </div>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
                                     </>
                                 )}
                             </div>
@@ -174,12 +283,24 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                                 {isLoading ? (
                                     <>
                                         <Loader2 className="w-5 h-5 animate-spin" />
-                                        <span>{isRegister ? t('auth.form.creatingAccount') : t('auth.form.signingIn')}</span>
+                                        <span>
+                                            {isRegister
+                                                ? isVerifying
+                                                    ? t('auth.form.verifying')
+                                                    : t('auth.form.creatingAccount')
+                                                : t('auth.form.signingIn')}
+                                        </span>
                                     </>
                                 ) : (
                                     <>
-                                        {isRegister ? <UserPlus className="w-5 h-5" /> : <LogIn />}
-                                        <span>{isRegister ? t('auth.form.createAccount') : t('auth.form.signIn')}</span>
+                                        {isRegister ? <UserPlus className="w-5 h-5" /> : <LogIn className="w-5 h-5" />}
+                                        <span>
+                                            {isRegister
+                                                ? isVerifying
+                                                    ? t('auth.form.verify')
+                                                    : t('auth.form.createAccount')
+                                                : t('auth.form.signIn')}
+                                        </span>
                                     </>
                                 )}
                             </button>
@@ -187,14 +308,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                             <div className="text-center">
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        setIsRegister(!isRegister);
-                                        setPassword('');
-                                        setShowPassword(false);
-                                    }}
+                                    onClick={toggleRegistration}
                                     className="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors duration-200"
                                 >
-                                    {isRegister ? t('auth.form.alreadyHaveAccount') : t('auth.form.needAccount')}
+                                    {isRegister
+                                        ? t('auth.form.alreadyHaveAccount')
+                                        : t('auth.form.needAccount')}
                                 </button>
                             </div>
                         </form>
@@ -205,10 +324,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             <ErrorModal
                 isOpen={showErrorModal}
                 onClose={() => setShowErrorModal(false)}
-                error={errorDetails || {
-                    message: t('error.unknownError', 'An unknown error occurred'),
-                    details: t('error.tryAgain', 'Please try again later')
-                }}
+                error={
+                    errorDetails || {
+                        message: t('error.unknownError', 'An unknown error occurred'),
+                        details: t('error.tryAgain', 'Please try again later')
+                    }
+                }
             />
         </>
     );
