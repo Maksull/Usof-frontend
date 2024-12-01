@@ -20,8 +20,6 @@ interface ProfilePageProps {
     onUserUpdate: (user: User) => void;
 }
 
-type ModalStatus = 'success' | 'error';
-
 export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) => {
     const { t } = useTranslation();
     const [isEditing, setIsEditing] = useState(false);
@@ -31,29 +29,34 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) 
         email: user?.email || '',
         login: user?.login || ''
     });
-    const [error, setError] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalStatus, setModalStatus] = useState<ModalStatus>('success');
+    const [modalStatus, setModalStatus] = useState<'success' | 'error'>('success');
     const [modalMessage, setModalMessage] = useState('');
 
     if (!user) return null;
 
+    const showNotification = (status: 'success' | 'error', message: string) => {
+        setModalStatus(status);
+        setModalMessage(message);
+        setIsModalOpen(true);
+    };
+
     const handleEditSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
+
         try {
-            const updatedUser = mapDtoToUser(await UsersService.updateProfile({
-                login: editData.login,
-                fullName: editData.fullName
-            }));
+            const updatedUser = mapDtoToUser(
+                await UsersService.updateProfile({
+                    login: editData.login,
+                    fullName: editData.fullName
+                })
+            );
             onUserUpdate(updatedUser);
             setIsEditing(false);
-            setError(null);
-            setModalStatus('success');
-            setModalMessage(t('profile.updateSuccess'));
-            setIsModalOpen(true);
+            showNotification('success', t('profile.updateSuccess'));
         } catch (error: any) {
-            setError(error.response?.data?.error || t('profile.updateError'));
+            showNotification('error', error.response?.data?.error || t('profile.updateError'));
         } finally {
             setIsLoading(false);
         }
@@ -66,14 +69,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) 
             try {
                 const updatedUser = mapDtoToUser(await UsersService.updateProfileImage(file));
                 onUserUpdate(updatedUser);
-                setModalStatus('success');
-                setModalMessage(t('profile.imageUpdateSuccess'));
-                setIsModalOpen(true);
+                showNotification('success', t('profile.imageUpdateSuccess'));
             } catch (error: any) {
-                setError(error.response?.data?.error || t('profile.imageUpdateError'));
-                setModalStatus('error');
-                setModalMessage(t('profile.imageUpdateError'));
-                setIsModalOpen(true);
+                showNotification('error', error.response?.data?.error || t('profile.imageUpdateError'));
             } finally {
                 setIsLoading(false);
             }
@@ -85,17 +83,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) 
         setIsLoading(true);
         try {
             await axios.post(`${config.backendUrl}/auth/initiate-email-change`);
-            setModalStatus('success');
-            setModalMessage(t('profile.emailChangeInstructions'));
-            setIsModalOpen(true);
+            showNotification('success', t('profile.emailChangeInstructions'));
         } catch (error) {
-            setModalStatus('error');
             if (axios.isAxiosError(error)) {
-                setModalMessage(error.response?.data?.error || t('profile.emailChangeError'));
+                showNotification('error', error.response?.data?.error || t('profile.emailChangeError'));
             } else {
-                setModalMessage(t('profile.emailChangeError'));
+                showNotification('error', t('profile.emailChangeError'));
             }
-            setIsModalOpen(true);
         } finally {
             setIsLoading(false);
         }
@@ -106,20 +100,25 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) 
         setIsLoading(true);
         try {
             await axios.post(`${config.backendUrl}/auth/initiate-password-change`);
-            setModalStatus('success');
-            setModalMessage(t('profile.passwordChangeInstructions'));
-            setIsModalOpen(true);
+            showNotification('success', t('profile.passwordChangeInstructions'));
         } catch (error) {
-            setModalStatus('error');
             if (axios.isAxiosError(error)) {
-                setModalMessage(error.response?.data?.error || t('profile.passwordChangeError'));
+                showNotification('error', error.response?.data?.error || t('profile.passwordChangeError'));
             } else {
-                setModalMessage(t('profile.passwordChangeError'));
+                showNotification('error', t('profile.passwordChangeError'));
             }
-            setIsModalOpen(true);
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditing(false);
+        setEditData({
+            fullName: user.fullName,
+            email: user.email,
+            login: user.login
+        });
     };
 
     return (
@@ -167,11 +166,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) 
                 <div className="px-6 md:px-8 pt-20 pb-6 space-y-6">
                     {isEditing ? (
                         <form onSubmit={handleEditSubmit} className="space-y-6">
-                            {error && (
-                                <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl text-red-600 dark:text-red-400 text-sm">
-                                    {error}
-                                </div>
-                            )}
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -205,11 +199,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) 
                             <div className="flex justify-end space-x-4">
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        setIsEditing(false);
-                                        setEditData({ fullName: user.fullName, email: user.email, login: user.login });
-                                        setError(null);
-                                    }}
+                                    onClick={handleCancelEdit}
                                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg transition-colors flex items-center space-x-2"
                                 >
                                     <X className="w-4 h-4" />
@@ -245,6 +235,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) 
                                     <span>@{user.login}</span>
                                 </p>
                             </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg space-y-1">
                                     <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -255,6 +246,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) 
                                         <span>{t(`profile.roles.${user.role.toLowerCase()}`)}</span>
                                     </div>
                                 </div>
+
                                 <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg space-y-1">
                                     <div className="text-sm text-gray-500 dark:text-gray-400">
                                         {t('profile.rating')}
@@ -264,6 +256,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) 
                                         <span>{user.rating}</span>
                                     </div>
                                 </div>
+
                                 <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg space-y-1">
                                     <div className="text-sm text-gray-500 dark:text-gray-400">
                                         {t('profile.email')}
@@ -274,6 +267,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) 
                                     </div>
                                 </div>
                             </div>
+
                             <div className="flex flex-wrap gap-4">
                                 <button
                                     onClick={handleEmailChange}
@@ -306,7 +300,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) 
             </div>
 
             <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Link to="/my-posts" className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
+                <Link
+                    to="/my-posts"
+                    className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl"
+                >
                     <div className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                         {t('profile.posts')}
                     </div>
@@ -314,7 +311,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) 
                         {user.postsCount || 0}
                     </div>
                 </Link>
-                <Link to="/my-comments" className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl">
+
+                <Link
+                    to="/my-comments"
+                    className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl"
+                >
                     <div className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                         {t('profile.comments')}
                     </div>
@@ -322,13 +323,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUserUpdate }) 
                         {user.commentsCount || 0}
                     </div>
                 </Link>
+
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-all duration-300">
                     <div className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                         {t('profile.rating')}
                     </div>
                     <div className="text-3xl font-bold text-yellow-500 flex items-center">
-                        {user.rating}
-                        <Star className="w-6 h-6 ml-2" />
+                        {user.rating} <Star className="w-6 h-6 ml-2" />
                     </div>
                 </div>
             </div>

@@ -143,7 +143,11 @@ const resources = {
                 successMessage: "Email successfully changed! Redirecting to login...",
                 infoMessage: "After changing your email address, you'll be logged out and need to sign in again with your new email address.",
                 errors: {
-                    generic: "Failed to change email"
+                    generic: "Failed to change email",
+                    invalidEmail: "Please enter a valid email address",
+                    emailInUse: "This email address is already in use",
+                    serverError: "Server error while changing email address",
+                    networkError: "Network error. Please check your connection"
                 }
             },
             changePassword: {
@@ -159,7 +163,10 @@ const resources = {
                 successMessage: "Password successfully changed! Redirecting to login...",
                 errors: {
                     passwordMismatch: "New passwords do not match",
-                    passwordTooShort: "New password must be at least 6 characters long",
+                    passwordMismatchDetails: "Please ensure both new password fields match",
+                    passwordTooShort: "New password is too short",
+                    passwordTooShortDetails: "Password must be at least 6 characters long",
+                    serverError: "Server error while changing password",
                     generic: "Failed to change password"
                 }
             },
@@ -239,7 +246,14 @@ const resources = {
                     needAccount: "Need an account? Register"
                 },
                 errors: {
-                    generic: "Authentication failed"
+                    generic: "Authentication failed",
+                    loginFailed: "Login failed. Please check your credentials and try again",
+                    registrationFailed: "Registration failed. Please try again",
+                    userExists: "User with this username or email already exists",
+                    invalidCredentials: "Invalid username or password",
+                    networkError: "Network error. Please check your connection",
+                    validationError: "Please check your input and try again",
+                    serverError: "Server error. Please try again later"
                 }
             },
             admin: {
@@ -397,7 +411,8 @@ const resources = {
                     imageMaxSize: "Maximum file size: 5MB. Leave empty to keep the current image.",
                     saveChanges: "Save Changes",
                     saving: "Saving...",
-                    cancel: "Cancel"
+                    cancel: "Cancel",
+                    imageInputLabel: "Upload post image"
                 },
                 comments: {
                     title: "Comments",
@@ -411,8 +426,25 @@ const resources = {
                     notFound: "Post not found",
                     updateFailed: "Failed to update post. Please try again.",
                     likeFailed: "Failed to update like status",
-                    commentFailed: "Failed to post comment"
+                    commentFailed: "Failed to post comment",
+                    fileTooLarge: "Image file is too large",
+                    fileTypeInvalid: "Invalid image file type",
+                    imageUploadFailed: "Failed to upload image",
+                    titleRequired: "Title is required",
+                    contentRequired: "Content is required",
+                    serverError: "Server error occurred while saving post"
                 }
+            },
+            error: {
+                title: "An Error Occurred",
+                code: "Error Code",
+                retry: "Retry",
+                close: "Close",
+                unknownError: "An unknown error occurred",
+                tryAgain: "Please try again later",
+                networkError: "Network connection error",
+                validationError: "Please check your input",
+                serverError: "Server error occurred"
             },
             // Language names
             languages: {
@@ -566,7 +598,11 @@ const resources = {
                 successMessage: "Email успішно змінено! Перенаправлення на сторінку входу...",
                 infoMessage: "Після зміни електронної адреси вам потрібно буде вийти з системи та увійти знову з новою адресою.",
                 errors: {
-                    generic: "Не вдалося змінити електронну адресу"
+                    generic: "Не вдалося змінити електронну адресу",
+                    invalidEmail: "Будь ласка, введіть дійсну електронну адресу",
+                    emailInUse: "Ця електронна адреса вже використовується",
+                    serverError: "Помилка сервера під час зміни електронної адреси",
+                    networkError: "Помилка мережі. Перевірте підключення"
                 }
             },
             changePassword: {
@@ -582,7 +618,10 @@ const resources = {
                 successMessage: "Пароль успішно змінено! Перенаправлення на сторінку входу...",
                 errors: {
                     passwordMismatch: "Нові паролі не співпадають",
-                    passwordTooShort: "Новий пароль повинен містити щонайменше 6 символів",
+                    passwordMismatchDetails: "Будь ласка, переконайтеся, що обидва поля нового пароля співпадають",
+                    passwordTooShort: "Новий пароль закороткий",
+                    passwordTooShortDetails: "Пароль повинен містити щонайменше 6 символів",
+                    serverError: "Помилка сервера під час зміни пароля",
                     generic: "Не вдалося змінити пароль"
                 }
             },
@@ -662,7 +701,14 @@ const resources = {
                     needAccount: "Потрібен обліковий запис? Зареєструватися"
                 },
                 errors: {
-                    generic: "Помилка аутентифікації"
+                    generic: "Помилка аутентифікації",
+                    loginFailed: "Помилка входу. Перевірте свої дані та спробуйте ще раз",
+                    registrationFailed: "Помилка реєстрації. Будь ласка, спробуйте ще раз",
+                    userExists: "Користувач з таким ім'ям або email вже існує",
+                    invalidCredentials: "Невірне ім'я користувача або пароль",
+                    networkError: "Помилка мережі. Перевірте підключення",
+                    validationError: "Перевірте введені дані та спробуйте ще раз",
+                    serverError: "Помилка сервера. Спробуйте пізніше"
                 }
             },
             admin: {
@@ -820,7 +866,8 @@ const resources = {
                     imageMaxSize: "Максимальний розмір файлу: 5МБ. Залиште порожнім, щоб зберегти поточне зображення.",
                     saveChanges: "Зберегти зміни",
                     saving: "Збереження...",
-                    cancel: "Скасувати"
+                    cancel: "Скасувати",
+                    imageInputLabel: "Завантажити зображення допису"
                 },
                 comments: {
                     title: "Коментарі",
@@ -834,8 +881,25 @@ const resources = {
                     notFound: "Допис не знайдено",
                     updateFailed: "Не вдалося оновити допис. Спробуйте ще раз.",
                     likeFailed: "Не вдалося оновити статус вподобання",
-                    commentFailed: "Не вдалося опублікувати коментар"
+                    commentFailed: "Не вдалося опублікувати коментар",
+                    fileTooLarge: "Файл зображення занадто великий",
+                    fileTypeInvalid: "Недійсний тип файлу зображення",
+                    imageUploadFailed: "Не вдалося завантажити зображення",
+                    titleRequired: "Назва є обов'язковою",
+                    contentRequired: "Вміст є обов'язковим",
+                    serverError: "Виникла помилка сервера під час збереження допису"
                 }
+            },
+            error: {
+                title: "Сталася помилка",
+                code: "Код помилки",
+                retry: "Повторити",
+                close: "Закрити",
+                unknownError: "Сталася невідома помилка",
+                tryAgain: "Будь ласка, спробуйте пізніше",
+                networkError: "Помилка підключення до мережі",
+                validationError: "Перевірте введені дані",
+                serverError: "Виникла помилка сервера"
             },
             // Language names
             languages: {

@@ -14,8 +14,9 @@ interface HeaderProps {
     onLogin: () => void;
     setPosts: React.Dispatch<React.SetStateAction<any[]>>;
     setPagination: React.Dispatch<React.SetStateAction<any>>;
-    setError: React.Dispatch<React.SetStateAction<string | null>>;
     setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+    setErrorDetails?: (error: { message: string; details?: string; code?: string; }) => void;
+    setShowErrorModal?: (show: boolean) => void;
 }
 
 export const Header = ({
@@ -24,8 +25,9 @@ export const Header = ({
     onLogin,
     setPosts,
     setPagination,
-    setError,
-    setIsLoading
+    setIsLoading,
+    setErrorDetails,
+    setShowErrorModal
 }: HeaderProps) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -45,7 +47,6 @@ export const Header = ({
                 setIsSearchFocused(false);
             }
         };
-
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
@@ -60,14 +61,20 @@ export const Header = ({
                     limit: '7',
                     searchQuery: searchQuery.trim()
                 });
-
                 const response = await axios.get(`${config.backendUrl}/posts?${params.toString()}`);
                 setPosts(response.data.posts);
                 setPagination(response.data.pagination);
                 setIsSearchFocused(false);
             } catch (err) {
                 console.error('Search failed:', err);
-                setError('Search failed. Please try again.');
+                if (setErrorDetails && setShowErrorModal) {
+                    setErrorDetails({
+                        message: t('error.searchFailed', 'Search failed'),
+                        details: t('error.tryAgain', 'Please try again'),
+                        code: 'SEARCH_ERROR'
+                    });
+                    setShowErrorModal(true);
+                }
             } finally {
                 setIsLoading(false);
             }
@@ -91,7 +98,6 @@ export const Header = ({
                             USOF
                         </Link>
                     </div>
-
                     <div ref={searchRef} className={`hidden md:block relative flex-grow max-w-xl mx-8 ${isSearchFocused ? 'z-20' : ''}`}>
                         <SearchBar
                             onSearch={({ posts, pagination }) => {
@@ -99,10 +105,10 @@ export const Header = ({
                                 setPagination(pagination);
                             }}
                             setIsLoading={setIsLoading}
-                            setError={setError}
+                            setErrorDetails={setErrorDetails}
+                            setShowErrorModal={setShowErrorModal}
                         />
                     </div>
-
                     <div className="flex items-center space-x-4">
                         <button
                             onClick={toggleTheme}
@@ -136,7 +142,6 @@ export const Header = ({
                                             </div>
                                         )}
                                     </Link>
-
                                     <button
                                         onClick={handleProfileClick}
                                         className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -149,10 +154,7 @@ export const Header = ({
                                                 {t(`header.roles.${currentUser.role.toLowerCase()}`)}
                                             </div>
                                         </div>
-                                        <ChevronDown
-                                            className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${isProfileMenuOpen ? 'rotate-180' : ''
-                                                }`}
-                                        />
+                                        <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${isProfileMenuOpen ? 'rotate-180' : ''}`} />
                                     </button>
                                 </div>
 
@@ -213,7 +215,6 @@ export const Header = ({
                                 {t('header.login')}
                             </Link>
                         )}
-
                         <button
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
                             className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"

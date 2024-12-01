@@ -1,5 +1,5 @@
 import { ChevronLeft, Info, Loader2, Mail, Save, X } from "lucide-react";
-import { NotificationModal } from "..";
+import { NotificationModal, ErrorModal } from "..";
 import { AuthService } from "../../services";
 import axios from "axios";
 import { useState } from "react";
@@ -7,40 +7,52 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 import config from "../../config";
 
-type ModalStatus = 'success' | 'error';
-
 export const ChangeEmailPage: React.FC = () => {
     const { t } = useTranslation();
     const [newEmail, setNewEmail] = useState('');
-    const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalStatus, setModalStatus] = useState<ModalStatus>('success');
-    const [modalMessage, setModalMessage] = useState('');
+    const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+    const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+    const [errorData, setErrorData] = useState({
+        message: '',
+        details: '',
+        code: ''
+    });
+
     const { token } = useParams<{ token: string }>();
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError(null);
         setLoading(true);
+
         try {
-            await axios.post(`${config.backendUrl}/auth/change-email`, { token, newEmail });
-            setModalStatus('success');
-            setModalMessage(t('changeEmail.successMessage'));
-            setIsModalOpen(true);
+            await axios.post(`${config.backendUrl}/auth/change-email`, {
+                token,
+                newEmail
+            });
+
+            setIsSuccessModalOpen(true);
             AuthService.logout();
             setTimeout(() => {
                 navigate('/login');
             }, 3000);
-        } catch (error) {
-            const errorMessage = axios.isAxiosError(error)
-                ? error.response?.data?.error || t('changeEmail.errors.generic')
-                : t('changeEmail.errors.generic');
-            setError(errorMessage);
-            setModalStatus('error');
-            setModalMessage(errorMessage);
-            setIsModalOpen(true);
+        } catch (err: unknown) {
+            let errorMessage = t('changeEmail.errors.generic');
+            let errorDetails = t('changeEmail.errors.serverError');
+            let errorCode = '';
+
+            if (axios.isAxiosError(err)) {
+                errorMessage = err.response?.data?.error || errorMessage;
+                errorCode = err.response?.status?.toString() || '';
+            }
+
+            setErrorData({
+                message: errorMessage,
+                details: errorDetails,
+                code: errorCode
+            });
+            setIsErrorModalOpen(true);
         } finally {
             setLoading(false);
         }
@@ -50,7 +62,7 @@ export const ChangeEmailPage: React.FC = () => {
         <div className="min-h-screen py-12 px-4 sm:px-6">
             <div className="max-w-md mx-auto">
                 <Link
-                    to={`/`}
+                    to="/"
                     className="mb-6 flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 >
                     <ChevronLeft className="w-5 h-5 mr-1" />
@@ -67,12 +79,6 @@ export const ChangeEmailPage: React.FC = () => {
                                 {t('changeEmail.title')}
                             </h2>
                         </div>
-
-                        {error && (
-                            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-lg text-red-600 dark:text-red-400 text-sm">
-                                {error}
-                            </div>
-                        )}
 
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div>
@@ -94,7 +100,7 @@ export const ChangeEmailPage: React.FC = () => {
 
                             <div className="flex items-center justify-end space-x-4 pt-2">
                                 <Link
-                                    to={`/`}
+                                    to="/"
                                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg transition-colors flex items-center space-x-2"
                                 >
                                     <X className="w-4 h-4" />
@@ -135,10 +141,20 @@ export const ChangeEmailPage: React.FC = () => {
             </div>
 
             <NotificationModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                status={modalStatus}
-                message={modalMessage}
+                isOpen={isSuccessModalOpen}
+                onClose={() => setIsSuccessModalOpen(false)}
+                status="success"
+                message={t('changeEmail.successMessage')}
+            />
+
+            <ErrorModal
+                isOpen={isErrorModalOpen}
+                onClose={() => setIsErrorModalOpen(false)}
+                error={{
+                    message: errorData.message,
+                    details: errorData.details,
+                    code: errorData.code
+                }}
             />
         </div>
     );

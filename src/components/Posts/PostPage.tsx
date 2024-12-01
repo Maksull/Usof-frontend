@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import config from '../../config';
-import { CommentComponent } from '..';
+import { CommentComponent, ErrorModal } from '..';
 import { useTranslation } from 'react-i18next';
 import { PostCommentFilter } from './PostCommentFilter';
 
@@ -263,12 +263,29 @@ const PostEditForm: React.FC<PostEditFormProps> = ({
     error
 }) => {
     const { t } = useTranslation();
+
     const [formData, setFormData] = useState({
         title: post.title,
         content: post.content,
         image: null as File | null,
         categoryIds: post.categories?.map(cat => cat.id) || []
     });
+
+    const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+    const [errorData, setErrorData] = useState({
+        message: '',
+        details: '',
+        code: ''
+    });
+
+    const showError = (message: string, details?: string) => {
+        setErrorData({
+            message,
+            details: details || '',
+            code: ''
+        });
+        setIsErrorModalOpen(true);
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -284,9 +301,16 @@ const PostEditForm: React.FC<PostEditFormProps> = ({
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        const maxSize = 5 * 1024 * 1024; // 5MB
+        const maxSize = 5 * 1024 * 1024;
 
-        if (file && file.size <= maxSize) {
+        if (file) {
+            if (file.size > maxSize) {
+                showError(
+                    t('post.errors.fileTooLarge'),
+                    t('post.form.imageMaxSize')
+                );
+                return;
+            }
             setFormData(prev => ({ ...prev, image: file }));
         }
     };
@@ -300,112 +324,115 @@ const PostEditForm: React.FC<PostEditFormProps> = ({
         });
     };
 
+    // Show error modal if error prop is present
+    React.useEffect(() => {
+        if (error) {
+            showError(error, t('error.serverError'));
+        }
+    }, [error, t]);
+
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-                <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl text-red-700 dark:text-red-400">
-                    {error}
+        <>
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                    <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {t('post.form.title')}
+                    </label>
+                    <input
+                        id="title"
+                        type="text"
+                        value={formData.title}
+                        onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        placeholder={t('post.form.titlePlaceholder')}
+                        required
+                    />
                 </div>
-            )}
 
-            <div>
-                <label
-                    htmlFor="title"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                >
-                    {t('post.form.title')}
-                </label>
-                <input
-                    id="title"
-                    type="text"
-                    value={formData.title}
-                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    placeholder={t('post.form.titlePlaceholder')}
-                    required
-                />
-            </div>
-
-            <div>
-                <label
-                    htmlFor="content"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                >
-                    {t('post.form.content')}
-                </label>
-                <textarea
-                    id="content"
-                    value={formData.content}
-                    onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                    rows={8}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    placeholder={t('post.form.contentPlaceholder')}
-                    required
-                />
-            </div>
-
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    {t('post.form.categories')}
-                </label>
-                <div className="flex flex-wrap gap-2">
-                    {categories.map(category => (
-                        <button
-                            key={category.id}
-                            type="button"
-                            onClick={() => handleCategoryToggle(category.id)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${formData.categoryIds.includes(category.id)
-                                ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 ring-2 ring-blue-500'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                                }`}
-                            aria-pressed={formData.categoryIds.includes(category.id)}
-                        >
-                            {category.title}
-                        </button>
-                    ))}
+                <div>
+                    <label htmlFor="content" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {t('post.form.content')}
+                    </label>
+                    <textarea
+                        id="content"
+                        value={formData.content}
+                        onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                        rows={8}
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        placeholder={t('post.form.contentPlaceholder')}
+                        required
+                    />
                 </div>
-            </div>
 
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t('post.form.image')}
-                </label>
-                <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    aria-label={t('post.form.imageInputLabel')}
-                />
-                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                    {t('post.form.imageMaxSize')}
-                </p>
-            </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                        {t('post.form.categories')}
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                        {categories.map(category => (
+                            <button
+                                key={category.id}
+                                type="button"
+                                onClick={() => handleCategoryToggle(category.id)}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${formData.categoryIds.includes(category.id)
+                                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 ring-2 ring-blue-500'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                    }`}
+                                aria-pressed={formData.categoryIds.includes(category.id)}
+                            >
+                                {category.title}
+                            </button>
+                        ))}
+                    </div>
+                </div>
 
-            <div className="flex justify-end gap-4 pt-4">
-                <button
-                    type="button"
-                    onClick={onCancel}
-                    className="px-6 py-3 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
-                >
-                    {t('common.cancel')}
-                </button>
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors dark:focus:ring-offset-gray-900 shadow-lg hover:shadow-xl"
-                >
-                    {loading ? (
-                        <>
-                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                            {t('post.form.saving')}
-                        </>
-                    ) : (
-                        t('post.form.saveChanges')
-                    )}
-                </button>
-            </div>
-        </form>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {t('post.form.image')}
+                    </label>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        aria-label={t('post.form.imageInputLabel')}
+                    />
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        {t('post.form.imageMaxSize')}
+                    </p>
+                </div>
+
+                <div className="flex justify-end gap-4 pt-4">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="px-6 py-3 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                    >
+                        {t('common.cancel')}
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors dark:focus:ring-offset-gray-900 shadow-lg hover:shadow-xl"
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                {t('post.form.saving')}
+                            </>
+                        ) : (
+                            t('post.form.saveChanges')
+                        )}
+                    </button>
+                </div>
+            </form>
+
+            <ErrorModal
+                isOpen={isErrorModalOpen}
+                onClose={() => setIsErrorModalOpen(false)}
+                error={errorData}
+            />
+        </>
     );
 };
 
@@ -417,7 +444,7 @@ interface FilterState {
     };
 }
 
-const CommentSection: React.FC<CommentSectionProps> = ({
+export const CommentSection: React.FC<CommentSectionProps> = ({
     post,
     onCommentPost,
     isSubmitting,
@@ -425,13 +452,31 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     setPost,
     isLiking,
     onCommentLike,
-    currentUser,
+    currentUser
 }) => {
     const { t } = useTranslation();
     const [content, setContent] = useState('');
     const [sortBy, setSortBy] = useState('publishDate_DESC');
     const [filters, setFilters] = useState<FilterState>({});
     const [filteredComments, setFilteredComments] = useState(post.comments || []);
+    const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+    const [errorData, setErrorData] = useState({
+        message: '',
+        details: '',
+        code: ''
+    });
+
+    // Show error modal if error prop is present
+    useEffect(() => {
+        if (error) {
+            setErrorData({
+                message: error,
+                details: t('error.serverError'),
+                code: ''
+            });
+            setIsErrorModalOpen(true);
+        }
+    }, [error, t]);
 
     useEffect(() => {
         let result = [...(post.comments || [])];
@@ -524,11 +569,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                         )}
                     </button>
                 </div>
-                {error && (
-                    <div className="text-sm text-red-600 dark:text-red-400" role="alert">
-                        {error}
-                    </div>
-                )}
             </form>
 
             <PostCommentFilter
@@ -548,6 +588,12 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                     onCommentLike={onCommentLike}
                 />
             </div>
+
+            <ErrorModal
+                isOpen={isErrorModalOpen}
+                onClose={() => setIsErrorModalOpen(false)}
+                error={errorData}
+            />
         </div>
     );
 };
