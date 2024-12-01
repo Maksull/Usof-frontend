@@ -3,7 +3,7 @@ import { Post, User } from '../../models';
 import axios from 'axios';
 import config from '../../config';
 import { Loader2, FileText } from 'lucide-react';
-import { PostsFilterBar, Pagination, PostCard } from '..';
+import { PostsFilterBar, Pagination, PostCard, ErrorModal } from '..';
 import { useTranslation } from 'react-i18next';
 
 interface FilterState {
@@ -23,7 +23,12 @@ export const UserPosts: React.FC<UserPostsProps> = ({ user }) => {
     const { t } = useTranslation();
     const [posts, setPosts] = useState<Post[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const [errorDetails, setErrorDetails] = useState<{
+        message: string;
+        details?: string;
+        code?: string;
+    } | null>(null);
     const [pagination, setPagination] = useState({
         currentPage: 1,
         totalPages: 1,
@@ -56,7 +61,12 @@ export const UserPosts: React.FC<UserPostsProps> = ({ user }) => {
             setPosts(response.data.posts);
             setPagination(response.data.pagination);
         } catch (err) {
-            setError(t('userPosts.errors.loadFailed'));
+            setErrorDetails({
+                message: t('userPosts.errors.loadFailed'),
+                details: t('error.tryAgain'),
+                code: 'POSTS_LOAD_ERROR'
+            });
+            setShowErrorModal(true);
         } finally {
             setIsLoading(false);
         }
@@ -92,18 +102,25 @@ export const UserPosts: React.FC<UserPostsProps> = ({ user }) => {
         try {
             await axios.delete(`${config.backendUrl}/posts/${postId}`);
             await fetchPosts(pagination.currentPage, sortBy, filters);
-
             const newTotalPages = Math.ceil((pagination.totalItems - 1) / pagination.itemsPerPage);
             if (pagination.currentPage > newTotalPages && newTotalPages > 0) {
                 await fetchPosts(newTotalPages, sortBy, filters);
             }
-            setError(null);
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                setError(error.response?.data?.error || t('userPosts.errors.deleteFailed'));
+                setErrorDetails({
+                    message: error.response?.data?.error || t('userPosts.errors.deleteFailed'),
+                    details: t('error.tryAgain'),
+                    code: 'POST_DELETE_ERROR'
+                });
             } else {
-                setError(t('userPosts.errors.deleteFailed'));
+                setErrorDetails({
+                    message: t('userPosts.errors.deleteFailed'),
+                    details: t('error.tryAgain'),
+                    code: 'POST_DELETE_ERROR'
+                });
             }
+            setShowErrorModal(true);
         }
     };
 
@@ -128,12 +145,6 @@ export const UserPosts: React.FC<UserPostsProps> = ({ user }) => {
                 currentSort={sortBy}
                 filters={filters}
             />
-
-            {error && (
-                <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-600 dark:text-red-400">
-                    {error}
-                </div>
-            )}
 
             {isLoading ? (
                 <div className="flex justify-center py-8">
@@ -166,6 +177,15 @@ export const UserPosts: React.FC<UserPostsProps> = ({ user }) => {
                     )}
                 </div>
             )}
+
+            <ErrorModal
+                isOpen={showErrorModal}
+                onClose={() => setShowErrorModal(false)}
+                error={errorDetails || {
+                    message: t('error.unknownError'),
+                    details: t('error.tryAgain')
+                }}
+            />
         </div>
     );
 };

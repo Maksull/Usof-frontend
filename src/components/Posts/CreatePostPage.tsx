@@ -5,6 +5,7 @@ import { PostsService } from '../../services';
 import { X, Upload, ChevronLeft, Loader2 } from 'lucide-react';
 import axios from 'axios';
 import config from '../../config';
+import { ErrorModal } from '..';
 
 interface Category {
     id: number;
@@ -18,8 +19,14 @@ export const CreatePostPage = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
+
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+    const [errorData, setErrorData] = useState({
+        message: '',
+        details: '',
+        code: ''
+    });
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [categories, setCategories] = useState<Category[]>([]);
     const [dragActive, setDragActive] = useState(false);
@@ -30,14 +37,31 @@ export const CreatePostPage = () => {
         categoryIds: [] as number[]
     });
 
+    const showError = (message: string, details?: string, code?: string) => {
+        setErrorData({
+            message,
+            details: details || '',
+            code: code || ''
+        });
+        setIsErrorModalOpen(true);
+    };
+
     useEffect(() => {
         const fetchCategories = async () => {
             try {
                 const response = await axios.get(`${config.backendUrl}/categories`);
                 setCategories(response.data);
-            } catch (err) {
-                setError(t('createPost.errors.fetchCategories'));
-                console.error('Fetch categories error:', err);
+            } catch (err: unknown) {
+                let errorMessage = t('createPost.errors.fetchCategories');
+                let errorDetails = t('error.serverError');
+                let errorCode = '';
+
+                if (axios.isAxiosError(err)) {
+                    errorMessage = err.response?.data?.error || errorMessage;
+                    errorCode = err.response?.status?.toString() || '';
+                }
+
+                showError(errorMessage, errorDetails, errorCode);
             }
         };
         fetchCategories();
@@ -46,11 +70,7 @@ export const CreatePostPage = () => {
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (e.type === "dragenter" || e.type === "dragover") {
-            setDragActive(true);
-        } else if (e.type === "dragleave") {
-            setDragActive(false);
-        }
+        setDragActive(e.type === "dragenter" || e.type === "dragover");
     };
 
     const handleDrop = (e: React.DragEvent) => {
@@ -65,16 +85,24 @@ export const CreatePostPage = () => {
 
     const handleFileValidation = (file: File) => {
         const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+
         if (!validTypes.includes(file.type)) {
-            setError(t('createPost.errors.invalidFileType'));
+            showError(
+                t('createPost.errors.invalidFileType'),
+                t('createPost.form.imageRequirements')
+            );
             return;
         }
+
         if (file.size > MAX_FILE_SIZE) {
-            setError(t('createPost.errors.fileTooLarge'));
+            showError(
+                t('createPost.errors.fileTooLarge'),
+                t('createPost.form.imageRequirements')
+            );
             return;
         }
+
         setFormData(prev => ({ ...prev, image: file }));
-        setError(null);
         const reader = new FileReader();
         reader.onloadend = () => {
             setImagePreview(reader.result as string);
@@ -101,7 +129,7 @@ export const CreatePostPage = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        setError(null);
+
         try {
             const formDataToSend = new FormData();
             formDataToSend.append('title', formData.title);
@@ -110,11 +138,20 @@ export const CreatePostPage = () => {
                 formDataToSend.append('image', formData.image);
             }
             formDataToSend.append('categoryIds', JSON.stringify(formData.categoryIds));
+
             await PostsService.createPost(formDataToSend);
             navigate('/');
-        } catch (err) {
-            setError(t('createPost.errors.createFailed'));
-            console.error('Create post error:', err);
+        } catch (err: unknown) {
+            let errorMessage = t('createPost.errors.createFailed');
+            let errorDetails = t('error.serverError');
+            let errorCode = '';
+
+            if (axios.isAxiosError(err)) {
+                errorMessage = err.response?.data?.error || errorMessage;
+                errorCode = err.response?.status?.toString() || '';
+            }
+
+            showError(errorMessage, errorDetails, errorCode);
         } finally {
             setLoading(false);
         }
@@ -124,7 +161,7 @@ export const CreatePostPage = () => {
         <div className="min-h-screen py-12">
             <div className="container mx-auto px-4 max-w-4xl">
                 <Link
-                    to={`/`}
+                    to="/"
                     className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 mb-6 group"
                 >
                     <ChevronLeft className="w-5 h-5 mr-1 transition-transform group-hover:-translate-x-1" />
@@ -135,21 +172,6 @@ export const CreatePostPage = () => {
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">
                         {t('createPost.title')}
                     </h1>
-
-                    {error && (
-                        <div className="mb-8 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl p-4">
-                            <div className="flex items-center space-x-3">
-                                <div className="flex-shrink-0">
-                                    <svg className="h-5 w-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <div className="flex-1 text-red-700 dark:text-red-400">
-                                    {error}
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                     <form onSubmit={handleSubmit} className="space-y-8">
                         <div>
@@ -220,7 +242,11 @@ export const CreatePostPage = () => {
                                 <div className="space-y-3 text-center">
                                     {imagePreview ? (
                                         <div className="relative inline-block">
-                                            <img src={imagePreview} alt={t('createPost.form.imagePreview')} className="h-48 w-auto rounded-lg shadow-md" />
+                                            <img
+                                                src={imagePreview}
+                                                alt={t('createPost.form.imagePreview')}
+                                                className="h-48 w-auto rounded-lg shadow-md"
+                                            />
                                             <button
                                                 type="button"
                                                 onClick={() => {
@@ -267,7 +293,7 @@ export const CreatePostPage = () => {
 
                         <div className="flex justify-end space-x-4 pt-6">
                             <Link
-                                to={`/`}
+                                to="/"
                                 className="px-6 py-3 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
                             >
                                 {t('common.cancel')}
@@ -290,6 +316,12 @@ export const CreatePostPage = () => {
                     </form>
                 </div>
             </div>
+
+            <ErrorModal
+                isOpen={isErrorModalOpen}
+                onClose={() => setIsErrorModalOpen(false)}
+                error={errorData}
+            />
         </div>
     );
 };

@@ -20,8 +20,10 @@ export { CommentCard } from "./Profile/CommentCard";
 
 export { NotificationModal } from "./Modals/NotificationModal";
 export { DeleteModal } from "./Modals/DeleteModal";
+export { ErrorModal } from "./Modals/ErrorModal";
 
 export { MainPage } from "./MainPage/MainPage";
+export { NotFoundPage } from "./MainPage/NotFoundPage";
 export { Pagination } from "./MainPage/Pagination";
 
 export { CreatePostPage } from "./Posts/CreatePostPage";

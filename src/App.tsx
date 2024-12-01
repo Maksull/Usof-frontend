@@ -11,14 +11,16 @@ import {
     MainPage,
     PostPage,
     ProfilePage,
-    NotificationModal,
     UserPosts,
     UserComments,
-    AdminDashboard
+    AdminDashboard,
+    ErrorModal,
+    NotFoundPage
 } from './components';
 import { AuthService, UsersService } from './services';
 import { mapDtoToUser } from './utils/mapping';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const LoadingSpinner = () => (
     <div className="fixed inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-50">
@@ -32,9 +34,9 @@ const LoadingSpinner = () => (
 const ScrollToTop = () => {
     const { pathname } = useLocation();
     useEffect(() => {
-        window.scrollTo(0, 0);
+        window.scrollTo(0, 0)
     }, [pathname]);
-    return null;
+    return null
 };
 
 interface Pagination {
@@ -45,14 +47,16 @@ interface Pagination {
 }
 
 function App() {
-    // User related states
+    const { t } = useTranslation();
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [showNotification, setShowNotification] = useState(false);
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const [errorDetails, setErrorDetails] = useState<{
+        message: string;
+        details?: string;
+        code?: string;
+    } | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
-
-    // Posts related states (lifted up from MainPage)
     const [posts, setPosts] = useState<any[]>([]);
     const [pagination, setPagination] = useState<Pagination>({
         currentPage: 1,
@@ -70,15 +74,19 @@ function App() {
                 } catch (error) {
                     console.error('Failed to fetch user profile:', error);
                     await handleLogout();
-                    setError('Session expired. Please login again.');
-                    setShowNotification(true);
+                    setErrorDetails({
+                        message: t('error.sessionExpired', 'Session expired'),
+                        details: t('error.loginAgain', 'Please login again'),
+                        code: 'AUTH_SESSION_EXPIRED'
+                    });
+                    setShowErrorModal(true);
                 }
             }
             setIsLoading(false);
             setIsInitialized(true);
         };
         initializeAuth();
-    }, []);
+    }, [t]);
 
     const handleLogin = async () => {
         setIsLoading(true);
@@ -88,8 +96,12 @@ function App() {
         } catch (error) {
             console.error('Failed to fetch user profile after login:', error);
             setUser(null);
-            setError('Failed to load user profile. Please try again.');
-            setShowNotification(true);
+            setErrorDetails({
+                message: t('error.profileLoadFailed', 'Failed to load user profile'),
+                details: t('error.tryAgain', 'Please try again'),
+                code: 'PROFILE_LOAD_ERROR'
+            });
+            setShowErrorModal(true);
         } finally {
             setIsLoading(false);
         }
@@ -102,8 +114,12 @@ function App() {
             setUser(null);
         } catch (error) {
             console.error('Logout failed:', error);
-            setError('Failed to logout. Please try again.');
-            setShowNotification(true);
+            setErrorDetails({
+                message: t('error.logoutFailed', 'Failed to logout'),
+                details: t('error.tryAgain', 'Please try again'),
+                code: 'LOGOUT_ERROR'
+            });
+            setShowErrorModal(true);
         } finally {
             setIsLoading(false);
         }
@@ -123,68 +139,50 @@ function App() {
                     onLogin={handleLogin}
                     setPosts={setPosts}
                     setPagination={setPagination}
-                    setError={setError}
                     setIsLoading={setIsLoading}
                 />
                 <main className="flex-grow relative">
                     {isLoading && <LoadingSpinner />}
                     <div className="container mx-auto px-4 py-6">
                         <Routes>
-                            <Route
-                                path="/login"
-                                element={user ? <Navigate to="/" replace /> : <LoginPage onLogin={handleLogin} />}
+                            <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage onLogin={handleLogin} />} />
+                            <Route path="/" element={
+                                <MainPage
+                                    posts={posts}
+                                    setPosts={setPosts}
+                                    pagination={pagination}
+                                    setPagination={setPagination}
+                                    currentUser={user}
+                                />}
                             />
-                            <Route
-                                path="/"
-                                element={
-                                    <MainPage
-                                        posts={posts}
-                                        setPosts={setPosts}
-                                        pagination={pagination}
-                                        setPagination={setPagination}
-                                        currentUser={user}
-                                    />
-                                }
-                            />
-                            <Route
-                                path="/profile"
-                                element={user ? <ProfilePage user={user} onUserUpdate={setUser} /> : <Navigate to="/login" />}
-                            />
-                            <Route
-                                path="/create-post"
-                                element={user ? <CreatePostPage /> : <Navigate to="/login" />}
-                            />
+                            <Route path="/profile" element={user ? <ProfilePage user={user} onUserUpdate={setUser} /> : <Navigate to="/login" />} />
+                            <Route path="/create-post" element={user ? <CreatePostPage /> : <Navigate to="/login" />} />
                             <Route path="/post/:id" element={<PostPage currentUser={user} />} />
-                            <Route
-                                path="/my-comments"
-                                element={user ? <UserComments user={user} /> : <Navigate to="/login" />}
-                            />
-                            <Route
-                                path="/my-posts"
-                                element={user ? <UserPosts user={user} /> : <Navigate to="/login" />}
-                            />
+                            <Route path="/my-comments" element={user ? <UserComments user={user} /> : <Navigate to="/login" />} />
+                            <Route path="/my-posts" element={user ? <UserPosts user={user} /> : <Navigate to="/login" />} />
                             <Route path="/reset-password/:token" element={<ChangePasswordPage />} />
                             <Route path="/change-email/:token" element={<ChangeEmailPage />} />
-                            <Route
-                                path="/admin"
-                                element={
-                                    user?.role === UserRole.ADMIN ? (
-                                        <AdminDashboard currentUser={user} />
-                                    ) : (
-                                        <Navigate to="/" />
-                                    )
-                                }
-                            />
+                            <Route path="/admin" element={
+                                user?.role === UserRole.ADMIN ? (
+                                    <AdminDashboard currentUser={user} />
+                                ) : (
+                                    <Navigate to="/" />
+                                )
+                            } />
                             {!user && <Route path="*" element={<Navigate to="/login" replace />} />}
+                            {user && <Route path="*" element={<NotFoundPage />} />}
                         </Routes>
                     </div>
                 </main>
                 <Footer />
-                <NotificationModal
-                    isOpen={showNotification}
-                    onClose={() => setShowNotification(false)}
-                    status="error"
-                    message={error || ''}
+
+                <ErrorModal
+                    isOpen={showErrorModal}
+                    onClose={() => setShowErrorModal(false)}
+                    error={errorDetails || {
+                        message: t('error.unknownError', 'An unknown error occurred'),
+                        details: t('error.tryAgain', 'Please try again later')
+                    }}
                 />
             </div>
         </Router>

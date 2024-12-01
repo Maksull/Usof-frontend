@@ -18,7 +18,7 @@ export const LanguageSelector = () => {
                     className="bg-transparent appearance-none outline-none 
                              text-gray-600 dark:text-gray-300 pr-8 cursor-pointer
                              [&>option]:bg-white dark:[&>option]:bg-gray-700"
-                    style={{ colorScheme: 'auto' }} // This helps with default browser styling
+                    style={{ colorScheme: 'auto' }}
                 >
                     <option value="en" className="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
                         {t('languages.en')}

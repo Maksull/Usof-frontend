@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Search, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import config from '../../config';
 import { Post } from '../../models';
@@ -11,50 +12,59 @@ interface SearchResponse {
         totalPages: number;
         totalItems: number;
         itemsPerPage: number;
-    };
+    }
 }
 
 interface SearchBarProps {
     onSearch: (response: SearchResponse) => void;
     setIsLoading: (loading: boolean) => void;
-    setError: (error: string | null) => void;
+    setErrorDetails?: (error: { message: string; details?: string; code?: string; }) => void;
+    setShowErrorModal?: (show: boolean) => void;
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({
     onSearch,
     setIsLoading,
-    setError,
+    setErrorDetails,
+    setShowErrorModal
 }) => {
+    const { t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState('');
     const [suggestions, setSuggestions] = useState<Post[]>([]);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [skipEffect, setSkipEffect] = useState(false);
+
+    const handleError = (error: Error) => {
+        console.error('Search failed:', error);
+        if (setErrorDetails && setShowErrorModal) {
+            setErrorDetails({
+                message: t('error.searchFailed', 'Search failed'),
+                details: t('error.tryAgain', 'Please try again'),
+                code: 'SEARCH_ERROR'
+            });
+            setShowErrorModal(true);
+        }
+    };
 
     const executeSearch = useCallback(async (query: string) => {
         setIsLoading(true);
         try {
             const params = new URLSearchParams({
                 page: '1',
-                limit: '7',
+                limit: '7'
             });
-
-            // Only add searchQuery param if there's a query
             if (query.trim()) {
                 params.append('searchQuery', query.trim());
             }
-
-            const response = await axios.get<SearchResponse>(
-                `${config.backendUrl}/posts?${params.toString()}`
-            );
+            const response = await axios.get<SearchResponse>(`${config.backendUrl}/posts?${params.toString()}`);
             onSearch(response.data);
             setIsSearchFocused(false);
         } catch (err) {
-            console.error('Search failed:', err);
-            setError('Search failed. Please try again.');
+            handleError(err as Error);
         } finally {
             setIsLoading(false);
         }
-    }, [setIsLoading, setError, onSearch]);
+    }, [setIsLoading, onSearch, setErrorDetails, setShowErrorModal, t]);
 
     useEffect(() => {
         if (skipEffect) {
@@ -67,16 +77,13 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 setSuggestions([]);
                 return;
             }
-
             try {
                 const params = new URLSearchParams({
                     page: '1',
                     limit: '5',
-                    searchQuery: searchQuery.trim(),
+                    searchQuery: searchQuery.trim()
                 });
-                const response = await axios.get<SearchResponse>(
-                    `${config.backendUrl}/posts?${params.toString()}`
-                );
+                const response = await axios.get<SearchResponse>(`${config.backendUrl}/posts?${params.toString()}`);
                 setSuggestions(response.data.posts);
             } catch (err) {
                 console.error('Failed to fetch suggestions:', err);
@@ -101,7 +108,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     const handleClearSearch = async () => {
         setSearchQuery('');
         setSuggestions([]);
-        await executeSearch(''); // Execute search with empty query to fetch all posts
+        await executeSearch('');
     };
 
     return (
@@ -110,7 +117,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 <div className="relative">
                     <input
                         type="text"
-                        placeholder="Search posts..."
+                        placeholder={t('header.search', 'Search posts...')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onFocus={() => setIsSearchFocused(true)}
@@ -119,10 +126,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                         }}
                         className={`w-full px-4 py-2 pl-10 pr-4 rounded-lg border
               transition-all duration-200
-              ${isSearchFocused
-                                ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800'
-                                : 'border-gray-300 dark:border-gray-600'
-                            } 
+              ${isSearchFocused ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800' : 'border-gray-300 dark:border-gray-600'} 
               bg-white dark:bg-gray-700 
               text-gray-900 dark:text-gray-100`}
                     />

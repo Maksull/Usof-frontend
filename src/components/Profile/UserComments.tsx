@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import config from '../../config';
 import { Loader2, MessageSquare } from 'lucide-react';
-import { CommentFilterBar, DeleteModal, Pagination } from '..';
+import { CommentFilterBar, DeleteModal, Pagination, ErrorModal } from '..';
 import { User, Comment } from '../../models';
 import { CommentCard } from './CommentCard';
 
@@ -30,7 +30,12 @@ export const UserComments: React.FC<UserCommentsProps> = ({ user }) => {
     const { t } = useTranslation();
     const [comments, setComments] = useState<Comment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const [errorDetails, setErrorDetails] = useState<{
+        message: string;
+        details?: string;
+        code?: string;
+    } | null>(null);
     const [commentToDelete, setCommentToDelete] = useState<number | null>(null);
     const [isDeletingComment, setIsDeletingComment] = useState(false);
     const [sortBy, setSortBy] = useState('publishDate_DESC');
@@ -65,7 +70,12 @@ export const UserComments: React.FC<UserCommentsProps> = ({ user }) => {
             setComments(response.data.comments);
             setPagination(response.data.pagination);
         } catch (error) {
-            setError(t('userComments.errors.loadFailed'));
+            setErrorDetails({
+                message: t('userComments.errors.loadFailed'),
+                details: t('error.tryAgain'),
+                code: 'COMMENTS_LOAD_ERROR'
+            });
+            setShowErrorModal(true);
         } finally {
             setIsLoading(false);
         }
@@ -103,18 +113,25 @@ export const UserComments: React.FC<UserCommentsProps> = ({ user }) => {
         try {
             await axios.delete(`${config.backendUrl}/comments/${commentToDelete}`);
             await fetchComments(pagination.currentPage, sortBy, filters);
-
             const newTotalPages = Math.ceil((pagination.totalItems - 1) / pagination.itemsPerPage);
             if (pagination.currentPage > newTotalPages && newTotalPages > 0) {
                 await fetchComments(newTotalPages, sortBy, filters);
             }
-            setError(null);
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                setError(error.response?.data?.error || t('userComments.errors.deleteFailed'));
+                setErrorDetails({
+                    message: error.response?.data?.error || t('userComments.errors.deleteFailed'),
+                    details: t('error.tryAgain'),
+                    code: 'COMMENT_DELETE_ERROR'
+                });
             } else {
-                setError(t('userComments.errors.deleteFailed'));
+                setErrorDetails({
+                    message: t('userComments.errors.deleteFailed'),
+                    details: t('error.tryAgain'),
+                    code: 'COMMENT_DELETE_ERROR'
+                });
             }
+            setShowErrorModal(true);
         } finally {
             setIsDeletingComment(false);
             setCommentToDelete(null);
@@ -146,10 +163,6 @@ export const UserComments: React.FC<UserCommentsProps> = ({ user }) => {
             {isLoading ? (
                 <div className="flex justify-center py-8">
                     <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                </div>
-            ) : error ? (
-                <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-600 dark:text-red-400">
-                    {error}
                 </div>
             ) : (
                 <div className="space-y-6">
@@ -190,6 +203,15 @@ export const UserComments: React.FC<UserCommentsProps> = ({ user }) => {
                 description={t('userComments.deleteModal.description')}
                 confirmButtonText={t('userComments.deleteModal.confirmButton')}
                 cancelButtonText={t('userComments.deleteModal.cancelButton')}
+            />
+
+            <ErrorModal
+                isOpen={showErrorModal}
+                onClose={() => setShowErrorModal(false)}
+                error={errorDetails || {
+                    message: t('error.unknownError'),
+                    details: t('error.tryAgain')
+                }}
             />
         </div>
     );

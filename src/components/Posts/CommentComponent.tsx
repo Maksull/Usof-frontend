@@ -6,7 +6,7 @@ import config from "../../config";
 import { PostsService } from "../../services";
 import { Comment, User, UserRole } from '../../models';
 import { useTranslation } from "react-i18next";
-import { DeleteModal } from '..';
+import { DeleteModal, ErrorModal } from '..';
 
 interface SingleCommentProps {
     comment: Comment;
@@ -34,21 +34,43 @@ const SingleComment: React.FC<SingleCommentProps> = ({
     const [isSubmittingReply, setIsSubmittingReply] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-    const [deleteError, setDeleteError] = useState<string | null>(null);
+    const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+    const [errorData, setErrorData] = useState({
+        message: '',
+        details: '',
+        code: ''
+    });
 
     const replies = allComments.filter(c => c.replyToId === comment.id);
     const replyToComment = allComments.find(c => c.id === comment.replyToId);
 
+    const showError = (message: string, details?: string, code?: string) => {
+        setErrorData({
+            message,
+            details: details || '',
+            code: code || ''
+        });
+        setIsErrorModalOpen(true);
+    };
+
     const handleDelete = async () => {
         setIsDeleting(true);
-        setDeleteError(null);
         try {
             await axios.delete(`${config.backendUrl}/comments/${comment.id}`);
             const updatedPost = await PostsService.getPostById(comment.postId);
-            setPost(transformToExtendedPost(updatedPost));
+            setPost(transformToExtendedPost(updatedPost, null));
             setShowDeleteDialog(false);
-        } catch (err) {
-            setDeleteError(t('comments.deleteError'));
+        } catch (err: unknown) {
+            let errorMessage = t('comments.deleteError');
+            let errorDetails = t('error.serverError');
+            let errorCode = '';
+
+            if (axios.isAxiosError(err)) {
+                errorMessage = err.response?.data?.error || errorMessage;
+                errorCode = err.response?.status?.toString() || '';
+            }
+
+            showError(errorMessage, errorDetails, errorCode);
         } finally {
             setIsDeleting(false);
         }
@@ -57,29 +79,46 @@ const SingleComment: React.FC<SingleCommentProps> = ({
     const handleReplySubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!replyContent.trim()) return;
+
         setIsSubmittingReply(true);
         try {
             await axios.post(`${config.backendUrl}/comments/${comment.id}/replies`, {
                 content: replyContent.trim(),
                 postId: comment.postId
             });
+
             setReplyContent('');
             setIsReplying(false);
             const updatedPost = await PostsService.getPostById(comment.postId);
-            setPost(transformToExtendedPost(updatedPost));
-        } catch (err) {
-            console.error('Error posting reply:', err);
+            setPost(transformToExtendedPost(updatedPost, null));
+        } catch (err: unknown) {
+            let errorMessage = t('comments.errors.postFailed');
+            let errorDetails = t('error.serverError');
+            let errorCode = '';
+
+            if (axios.isAxiosError(err)) {
+                errorMessage = err.response?.data?.error || errorMessage;
+                errorCode = err.response?.status?.toString() || '';
+            }
+
+            showError(errorMessage, errorDetails, errorCode);
         } finally {
             setIsSubmittingReply(false);
         }
     };
 
     const canDelete = Boolean(
-        currentUser && (
-            currentUser.role === UserRole.ADMIN ||
-            currentUser.id === comment.authorId
-        )
+        currentUser && (currentUser.role === UserRole.ADMIN || currentUser.id === comment.authorId)
     );
+
+    const handleCommentScroll = (commentId: number) => {
+        const element = document.getElementById(`comment-${commentId}`);
+        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        element?.classList.add('bg-blue-50', 'dark:bg-blue-900/20');
+        setTimeout(() => {
+            element?.classList.remove('bg-blue-50', 'dark:bg-blue-900/20');
+        }, 2000);
+    };
 
     return (
         <div className="w-full mb-4">
@@ -89,18 +128,15 @@ const SingleComment: React.FC<SingleCommentProps> = ({
             >
                 {replyToComment && (
                     <button
-                        onClick={() => {
-                            const element = document.getElementById(`comment-${replyToComment.id}`);
-                            element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            element?.classList.add('bg-blue-50', 'dark:bg-blue-900/20');
-                            setTimeout(() => {
-                                element?.classList.remove('bg-blue-50', 'dark:bg-blue-900/20');
-                            }, 2000);
-                        }}
+                        onClick={() => handleCommentScroll(replyToComment.id)}
                         className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-2 hover:text-blue-600 dark:hover:text-blue-400"
                     >
                         <Reply className="w-3 h-3 md:w-4 md:h-4 mr-1 rotate-180" />
-                        <span>{t('comments.replyingTo', { username: replyToComment.author?.login ?? t('comments.unknownUser') })}</span>
+                        <span>
+                            {t('comments.replyingTo', {
+                                username: replyToComment.author?.login ?? t('comments.unknownUser')
+                            })}
+                        </span>
                     </button>
                 )}
 
@@ -140,8 +176,11 @@ const SingleComment: React.FC<SingleCommentProps> = ({
                                 onClick={() => onCommentLike(comment.id, true)}
                                 disabled={isLiking}
                                 className={`flex items-center text-xs md:text-sm px-2 py-1 rounded-md transition-all 
-                  ${isLiking ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}
-                  ${comment.likes?.some(like => like.type === 'like') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}
+                    ${isLiking ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}
+                    ${comment.likes?.some(like => like.type === 'like')
+                                        ? 'text-blue-600 dark:text-blue-400'
+                                        : 'text-gray-500 dark:text-gray-400'
+                                    }`}
                             >
                                 <ThumbsUp className="w-3 h-3 md:w-4 md:h-4 mr-1" />
                                 {comment.likes?.filter(like => like.type === 'like').length || 0}
@@ -151,8 +190,11 @@ const SingleComment: React.FC<SingleCommentProps> = ({
                                 onClick={() => onCommentLike(comment.id, false)}
                                 disabled={isLiking}
                                 className={`flex items-center text-xs md:text-sm px-2 py-1 rounded-md transition-all 
-                  ${isLiking ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}
-                  ${comment.likes?.some(like => like.type === 'dislike') ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}
+                    ${isLiking ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}
+                    ${comment.likes?.some(like => like.type === 'dislike')
+                                        ? 'text-red-600 dark:text-red-400'
+                                        : 'text-gray-500 dark:text-gray-400'
+                                    }`}
                             >
                                 <ThumbsDown className="w-3 h-3 md:w-4 md:h-4 mr-1" />
                                 {comment.likes?.filter(like => like.type === 'dislike').length || 0}
@@ -191,12 +233,6 @@ const SingleComment: React.FC<SingleCommentProps> = ({
                             )}
                         </div>
 
-                        {deleteError && (
-                            <div className="mt-2 text-sm text-red-600 dark:text-red-400">
-                                {deleteError}
-                            </div>
-                        )}
-
                         {isReplying && (
                             <form onSubmit={handleReplySubmit} className="mt-3">
                                 <textarea
@@ -224,7 +260,9 @@ const SingleComment: React.FC<SingleCommentProps> = ({
                                                 <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
                                                 {t('comments.posting')}
                                             </>
-                                        ) : t('comments.postReply')}
+                                        ) : (
+                                            t('comments.postReply')
+                                        )}
                                     </button>
                                 </div>
                             </form>
@@ -244,18 +282,25 @@ const SingleComment: React.FC<SingleCommentProps> = ({
                 cancelButtonText={t('common.cancel')}
             />
 
-            {showReplies && replies.map(reply => (
-                <SingleComment
-                    key={reply.id}
-                    comment={reply}
-                    allComments={allComments}
-                    setPost={setPost}
-                    isLiking={isLiking}
-                    onCommentLike={onCommentLike}
-                    depth={depth + 1}
-                    currentUser={currentUser}
-                />
-            ))}
+            <ErrorModal
+                isOpen={isErrorModalOpen}
+                onClose={() => setIsErrorModalOpen(false)}
+                error={errorData}
+            />
+
+            {showReplies &&
+                replies.map((reply) => (
+                    <SingleComment
+                        key={reply.id}
+                        comment={reply}
+                        allComments={allComments}
+                        setPost={setPost}
+                        isLiking={isLiking}
+                        onCommentLike={onCommentLike}
+                        depth={depth + 1}
+                        currentUser={currentUser}
+                    />
+                ))}
         </div>
     );
 };
