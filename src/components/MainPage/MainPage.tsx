@@ -276,7 +276,6 @@ export const MainPage = ({
             }));
         }
     };
-    console.log(currentUser)
 
     return (
         <div className="min-h-screen">

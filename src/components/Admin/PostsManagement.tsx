@@ -37,7 +37,7 @@ export const PostsManagement: React.FC<PostsManagementProps> = ({
         currentPage: 1,
         totalPages: 1,
         totalItems: 0,
-        itemsPerPage: 10
+        itemsPerPage: 6
     });
     const [sortBy, setSortBy] = useState('publishDate');
     const [filters, setFilters] = useState<FilterState>({});

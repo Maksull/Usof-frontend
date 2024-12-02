@@ -742,7 +742,7 @@ export const PostPage: React.FC<PostPageProps> = ({ currentUser }) => {
 
     if (error || !post) {
         return (
-            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+            <div className="min-h-screen py-8">
                 <div className="container mx-auto px-4 max-w-4xl">
                     <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl p-6 shadow-lg">
                         <div className="flex items-center space-x-3">
