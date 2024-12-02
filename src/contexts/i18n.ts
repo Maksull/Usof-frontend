@@ -267,7 +267,14 @@ const resources = {
                     invalidCredentials: "Invalid username or password",
                     networkError: "Network error. Please check your connection",
                     validationError: "Please check your input and try again",
-                    serverError: "Server error. Please try again later"
+                    serverError: "Server error. Please try again later",
+                    passwordRequirements: {
+                        length: "Password must be at least 8 characters long",
+                        uppercase: "Password must contain at least one uppercase letter",
+                        lowercase: "Password must contain at least one lowercase letter",
+                        number: "Password must contain at least one number",
+                        combined: "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number"
+                    }
                 }
             },
             admin: {
@@ -736,7 +743,14 @@ const resources = {
                     invalidCredentials: "Невірне ім'я користувача або пароль",
                     networkError: "Помилка мережі. Перевірте підключення",
                     validationError: "Перевірте введені дані та спробуйте ще раз",
-                    serverError: "Помилка сервера. Спробуйте пізніше"
+                    serverError: "Помилка сервера. Спробуйте пізніше",
+                    passwordRequirements: {
+                        length: "Пароль повинен містити щонайменше 8 символів",
+                        uppercase: "Пароль повинен містити принаймні одну велику літеру",
+                        lowercase: "Пароль повинен містити принаймні одну малу літеру",
+                        number: "Пароль повинен містити принаймні одну цифру",
+                        combined: "Пароль повинен містити щонайменше 8 символів, одну велику літеру, одну малу літеру та одну цифру"
+                    }
                 }
             },
             admin: {

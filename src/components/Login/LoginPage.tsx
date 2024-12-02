@@ -87,15 +87,35 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 }
 
                 if (isVerifying) {
-                    const verifyResponse = await axios.post(`${config.backendUrl}/auth/verify-email`, {
-                        email,
-                        code: verificationCode
-                    });
+                    try {
+                        const verifyResponse = await axios.post(`${config.backendUrl}/auth/verify-email`, {
+                            email,
+                            code: verificationCode
+                        });
 
-                    if (verifyResponse.data.message === 'Email verified successfully') {
-                        await AuthService.register({ login, password, email, fullName });
-                        setIsVerifying(false);
-                        navigate('/');
+                        if (verifyResponse.data.message === 'Email verified successfully') {
+                            try {
+                                await AuthService.register({ login, password, email, fullName });
+                                setIsVerifying(false);
+                                navigate('/');
+                            } catch (registrationError: any) {
+                                setErrorDetails({
+                                    message: registrationError.response?.data?.error || t('auth.errors.passwordRequirements.combined'),
+                                    details: t('auth.errors.registrationFailed'),
+                                    code: 'REGISTRATION_ERROR'
+                                });
+                                setShowErrorModal(true);
+                            }
+                        }
+                    } catch (verificationError: any) {
+                        setErrorDetails({
+                            message: verificationError.response?.data?.error ||
+                                verificationError.response?.data?.message ||
+                                t('auth.errors.verificationFailed'),
+                            details: t('auth.errors.invalidCode'),
+                            code: 'VERIFICATION_ERROR'
+                        });
+                        setShowErrorModal(true);
                     }
                 }
             } else {
@@ -105,7 +125,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             }
         } catch (error: any) {
             setErrorDetails({
-                message: error.response?.data?.message || t('auth.errors.generic'),
+                message: error.response?.data?.error ||
+                    error.response?.data?.message ||
+                    t('auth.errors.generic'),
                 details: isRegister ? t('auth.errors.registrationFailed') : t('auth.errors.loginFailed'),
                 code: isRegister ? 'REGISTRATION_ERROR' : 'LOGIN_ERROR'
             });

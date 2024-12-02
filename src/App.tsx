@@ -62,7 +62,7 @@ function App() {
         currentPage: 1,
         totalPages: 1,
         totalItems: 0,
-        itemsPerPage: 7
+        itemsPerPage: 6
     });
 
     useEffect(() => {
@@ -169,8 +169,7 @@ function App() {
                                     <Navigate to="/" />
                                 )
                             } />
-                            {!user && <Route path="*" element={<Navigate to="/login" replace />} />}
-                            {user && <Route path="*" element={<NotFoundPage />} />}
+                            <Route path="*" element={<NotFoundPage />} />
                         </Routes>
                     </div>
                 </main>
