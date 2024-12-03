@@ -1,11 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Menu, User as UserIcon, LogOut, Sun, Moon, ChevronDown, FileText, MessageSquare, ShieldCheck } from 'lucide-react';
+import { Menu, User as UserIcon, LogOut, Sun, Moon, ChevronDown, FileText, MessageSquare, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts';
 import { Link } from 'react-router-dom';
 import { User, UserRole } from '../../models';
-import axios from 'axios';
-import config from '../../config';
 import { SearchBar } from './SearchBar';
 
 interface HeaderProps {
@@ -31,7 +29,6 @@ export const Header = ({
 }: HeaderProps) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const { theme, toggleTheme } = useTheme();
     const { t } = useTranslation();
@@ -50,36 +47,6 @@ export const Header = ({
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
-
-    const handleSearch = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (searchQuery.trim()) {
-            setIsLoading(true);
-            try {
-                const params = new URLSearchParams({
-                    page: '1',
-                    limit: '7',
-                    searchQuery: searchQuery.trim()
-                });
-                const response = await axios.get(`${config.backendUrl}/posts?${params.toString()}`);
-                setPosts(response.data.posts);
-                setPagination(response.data.pagination);
-                setIsSearchFocused(false);
-            } catch (err) {
-                console.error('Search failed:', err);
-                if (setErrorDetails && setShowErrorModal) {
-                    setErrorDetails({
-                        message: t('error.searchFailed', 'Search failed'),
-                        details: t('error.tryAgain', 'Please try again'),
-                        code: 'SEARCH_ERROR'
-                    });
-                    setShowErrorModal(true);
-                }
-            } finally {
-                setIsLoading(false);
-            }
-        }
-    };
 
     const handleProfileClick = () => {
         if (currentUser) {
@@ -227,18 +194,16 @@ export const Header = ({
                 {isMenuOpen && (
                     <div className="md:hidden mt-4 border-t border-gray-200 dark:border-gray-700">
                         <div className="py-4">
-                            <form onSubmit={handleSearch}>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        placeholder={t('header.search')}
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full px-4 py-2 pl-10 pr-4 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                                    />
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-5 w-5" />
-                                </div>
-                            </form>
+                            <SearchBar
+                                onSearch={({ posts, pagination }) => {
+                                    setPosts(posts);
+                                    setPagination(pagination);
+                                    setIsMenuOpen(false);
+                                }}
+                                setIsLoading={setIsLoading}
+                                setErrorDetails={setErrorDetails}
+                                setShowErrorModal={setShowErrorModal}
+                            />
                         </div>
                     </div>
                 )}

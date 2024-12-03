@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Search, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import config from '../../config';
 import { Post } from '../../models';
@@ -18,7 +19,7 @@ interface SearchResponse {
 interface SearchBarProps {
     onSearch: (response: SearchResponse) => void;
     setIsLoading: (loading: boolean) => void;
-    setErrorDetails?: (error: { message: string; details?: string; code?: string; }) => void;
+    setErrorDetails?: (error: { message: string; details?: string; code?: string }) => void;
     setShowErrorModal?: (show: boolean) => void;
 }
 
@@ -29,6 +30,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     setShowErrorModal
 }) => {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
     const [suggestions, setSuggestions] = useState<Post[]>([]);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -49,10 +51,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     const executeSearch = useCallback(async (query: string) => {
         setIsLoading(true);
         try {
-            const params = new URLSearchParams({
-                page: '1',
-                limit: '7'
-            });
+            const params = new URLSearchParams({ page: '1', limit: '7' });
             if (query.trim()) {
                 params.append('searchQuery', query.trim());
             }
@@ -71,7 +70,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             setSkipEffect(false);
             return;
         }
-
         const timer = setTimeout(async () => {
             if (searchQuery.trim().length < 2) {
                 setSuggestions([]);
@@ -90,7 +88,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 setSuggestions([]);
             }
         }, 300);
-
         return () => clearTimeout(timer);
     }, [searchQuery, skipEffect]);
 
@@ -99,10 +96,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         await executeSearch(searchQuery);
     };
 
-    const handleSuggestionClick = async (post: Post) => {
-        setSkipEffect(true);
-        setSearchQuery(post.title);
-        await executeSearch(post.title);
+    const handleSuggestionClick = (post: Post) => {
+        setSearchQuery('');
+        setSuggestions([]);
+        setIsSearchFocused(false);
+        navigate(`/post/${post.id}`);
     };
 
     const handleClearSearch = async () => {
@@ -124,11 +122,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                         onBlur={() => {
                             setTimeout(() => setIsSearchFocused(false), 200);
                         }}
-                        className={`w-full px-4 py-2 pl-10 pr-4 rounded-lg border
-              transition-all duration-200
-              ${isSearchFocused ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800' : 'border-gray-300 dark:border-gray-600'} 
-              bg-white dark:bg-gray-700 
-              text-gray-900 dark:text-gray-100`}
+                        className={`w-full px-4 py-2 pl-10 pr-4 rounded-lg border transition-all duration-200 ${isSearchFocused ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100`}
                     />
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-5 w-5" />
                     {searchQuery && (
@@ -142,7 +136,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     )}
                 </div>
             </form>
-
             {isSearchFocused && suggestions.length > 0 && (
                 <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
                     {suggestions.map((post) => (
