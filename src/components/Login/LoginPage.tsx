@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthService } from '../../services';
 import { User, Lock, Mail, UserPlus, LogIn, Loader2, KeyRound, Eye, EyeOff, RefreshCw } from 'lucide-react';
@@ -295,6 +295,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                                         )}
                                     </>
                                 )}
+                            </div>
+                            <div className="text-center mt-4">
+                                <Link
+                                    to="/forgot-password"
+                                    className="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+                                >
+                                    Forgot your password?
+                                </Link>
                             </div>
 
                             <button

@@ -3,6 +3,7 @@ export { Footer } from "./Footer/Footer";
 export { LanguageSelector } from "./Footer/LanguageSelector";
 
 export { LoginPage } from "./Login/LoginPage";
+export { ForgotPasswordForm } from "./Login/ForgotPasswordForm";
 
 export { AdminDashboard } from "./Admin/AdminDashboard";
 export { PostsManagement } from "./Admin/PostsManagement";

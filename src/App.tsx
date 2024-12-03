@@ -15,7 +15,8 @@ import {
     UserComments,
     AdminDashboard,
     ErrorModal,
-    NotFoundPage
+    NotFoundPage,
+    ForgotPasswordForm
 } from './components';
 import { AuthService, UsersService } from './services';
 import { mapDtoToUser } from './utils/mapping';
@@ -160,7 +161,8 @@ function App() {
                             <Route path="/post/:id" element={<PostPage currentUser={user} />} />
                             <Route path="/my-comments" element={user ? <UserComments user={user} /> : <Navigate to="/login" />} />
                             <Route path="/my-posts" element={user ? <UserPosts user={user} /> : <Navigate to="/login" />} />
-                            <Route path="/reset-password/:token" element={<ChangePasswordPage />} />
+                            <Route path="/forgot-password" element={<ForgotPasswordForm />} />
+                            <Route path="/reset-password/:token" element={<ForgotPasswordForm />} />
                             <Route path="/change-email/:token" element={<ChangeEmailPage />} />
                             <Route path="/admin" element={
                                 user?.role === UserRole.ADMIN ? (
